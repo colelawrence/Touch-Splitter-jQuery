@@ -1,0 +1,20 @@
+.TouchSplitter {
+	overflow-x:hidden;}
+
+.TouchSplitter>div {
+	height: 100%;
+	display: inline-block;
+	font-size: 0;}
+	.TouchSplitter>div.splitter-bar>span.dock-toggle {
+		background-image: url(/static/graphics/vdockbar-trans.gif);
+		background-repeat: no-repeat;
+		background-position: center;}
+	.TouchSplitter>div>* {
+		font-size: 1em;}
+
+.TouchSplitter,
+.TouchSplitter>div,
+.TouchSplitter>div.splitter-bar>span.dock-toggle{
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;}

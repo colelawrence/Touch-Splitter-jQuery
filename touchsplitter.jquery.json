@@ -1,0 +1,22 @@
+{
+  "name":"touchsplitter",
+  "version":"0.1.0",
+  "title":"Touch Splitter",
+  "author":
+    {
+      "name":"Cole Lawrence",
+      "email":"cole@zombiehippie.com",
+      "url":"http://zombiehippie.com"
+    },
+  "licenses": [
+    {
+      "type": "Creative Commons Attribution-ShareAlike 3.0 Unported License",
+      "url": "http://creativecommons.org/licenses/by-sa/3.0/"
+    }
+  ],
+  "dependencies":
+    {
+      "jquery" : ">=1.7"
+    },
+  "description":"A simple splitter bar system with event triggers, compatible with touch screen devices"
+}
