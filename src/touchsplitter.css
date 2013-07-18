@@ -1,16 +1,19 @@
-.TouchSplitter {
-	overflow-x:hidden;}
+.TouchSplitter.hTS {overflow-x:hidden;}
+.TouchSplitter.vTS {overflow-y:hidden;}
 
+.TouchSplitter.hTS>div{height: 100%;width: 46%;}
+.TouchSplitter.vTS>div{width: 100%;height: 46%;}
 .TouchSplitter>div {
-	height: 100%;
-	display: inline-block;
-	font-size: 0;}
+	display: block;
+	margin:0;
+	padding:0;
+	float:left;}
+	.TouchSplitter.hTS>div.splitter-bar {width:8%;cursor:col-resize}
+	.TouchSplitter.vTS>div.splitter-bar {height:8%;cursor:row-resize}
 	.TouchSplitter>div.splitter-bar>span.dock-toggle {
 		background-image: url(/static/graphics/vdockbar-trans.gif);
 		background-repeat: no-repeat;
 		background-position: center;}
-	.TouchSplitter>div>* {
-		font-size: 1em;}
 
 .TouchSplitter,
 .TouchSplitter>div,

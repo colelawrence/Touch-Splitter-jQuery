@@ -1,124 +1,108 @@
+###
+# Touch Splitter JQuery was created by Cole Lawrence(github:ZombieHippie)
+# This work is licensed under the Creative Commons Attribution-ShareAlike 3.0
+# Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.
+###
+$.fn.horizontalSplit = () ->
+  if this.children().length isnt 2 and this.children().length isnt 0
+    throw "Cannot make a splitter here! Incorrect number of div children in "+this
+  this.addClass('TouchSplitter hTS')
+  new TouchSplitter(this, true)
+$.fn.verticalSplit = () ->
+  childs = this.children().length
+  if childs isnt 2 and childs isnt 0
+    throw "Cannot make a splitter here! Incorrect number of div children in "+this
+  this.addClass('TouchSplitter vTS')
+  new TouchSplitter(this, false)
+
 class TouchSplitter
-  constructor: (@id, @min, init, @max) ->
-    @barWidth = 5        # This represents half of the percent width
-    @barPosition = 0.3
-    @barPositionMin = @min / $('#'+@id).width()
-    @barPositionMax = @max / $('#'+@id).width()
-    @lastOpenPos = init
+  constructor: (@element, @horizontal) ->
+    # Create Splitter bar div
+    firstdiv = @element.find ">div:first"
+    if firstdiv.length is 0
+      # Split it ourselves
+      @element.append "
+        <div></div>
+        <div class=\"splitter-bar\"></div>
+        <div></div>"
+    else
+      firstdiv.after "<div class=\"splitter-bar\"></div>"
+    @barThicknessPx = 10
+    @barThickness = .04  # This represents half of the percent width
+    @barPosition = 0.5
+    @barPositionMin = @min / @element.width()
+    @barPositionMax = @max / @element.width()
     @dragging = false
     @docked = false
-    @initMouseX = 0
+    @initMouse = 0
     @initBarPosition = 0
-    @splitWidth = 0
-    @fullsreen = false
 
     @onResize()
-    $(window).on('resize', @onResize)
-    $('#'+@id).addClass 'hsplit'
+    @element.on('resize', @onResize)
     @setupMouseEvents()
+    @setPercentages()
 
+  splitDist: =>
+    return @element.width() if @horizontal
+    return @element.height()
+
+  setPercentages: =>
+    first = @barPosition - @barThickness
+    second = 1 - @barPosition - @barThickness
+    console.log first + " " + @barPosition
+    attr = if @horizontal then "width" else "height"
+    @getFirst().css attr, (100*first) + "%"
+    @getSecond().css attr, (100*second) + "%"
+    e = jQuery.Event( "resize", { horizontal:@horizontal, } );
+    @getFirst().trigger("resize")
+    @getSecond().trigger("resize")
   setupMouseEvents: =>
-    $('#'+@id+' #splitter-bar').on 'mousedown', @startDragging
-    $('#'+@id).on 'mouseleave', @stopDragging
-    $('#'+@id).on 'mousemove', @drag
-    $('#'+@id).on 'click', '#splitter-bar #toggle', @toggleDock
-    $('#'+@id+' #splitter-bar').on 'touchstart', @touchStart
-    $('#'+@id+' #splitter-bar').on 'touchmove', @touchMove
-
-  toggleDock: =>
-    if @docked
-      @undock()
-    else 
-      @dock()
-    @dragging = false
-
-  dock: =>
-    @lastOpenPos = @barPosition
-    @barPosition = 0
-    @getLeft().hide()
-    @docked=true
-    @update()
-
-  undock: =>
-    @barPosition = @lastOpenPos
-    @getLeft().show()
-    @docked=false
-    @update()
-    $(window).resize()
+    $(window).on 'mousemove', @drag
+    @element.find('.splitter-bar').on 'mousedown', @startDragging
+    @element.find('.splitter-bar').on 'touchstart', @touchStart
+    @element.find('.splitter-bar').on 'touchmove', @touchMove
 
   startDragging: (event) =>
+    @initMouse = if @horizontal then event.clientX else event.clientY
     @dragging = true
-    @initMouseX = event.clientX
     @initBarPosition = @barPosition
     event.preventDefault()
 
   drag: (event) =>
     return if not @dragging
+    # Mozilla and Webkit handle the mousemove event differently 
     whichM = if typeof event.buttons isnt 'undefined' then event.buttons else event.which
     @stopDragging() if whichM is 0
-    @setBarPosition @initBarPosition + (event.clientX-@initMouseX)/@splitWidth 
+    client = if @horizontal then event.clientX else event.clientY
+    @barPosition = @initBarPosition + (client-@initMouse)/@splitDist()
+    @setPercentages()
 
   stopDragging: (event) =>
     @dragging = false
-    $('#file-manager').resize()
 
   touchStart: (event) =>
     orig = event.originalEvent;
-    @initMouseX = orig.changedTouches[0].pageX
+    @initMouse = if @horizontal then orig.changedTouches[0].pageX else orig.changedTouches[0].pageY
     @initBarPosition = @barPosition
 
   touchMove: (event) =>
     event.preventDefault()
     orig = event.originalEvent
-    @setBarPosition @initBarPosition + (orig.changedTouches[0].pageX-@initMouseX)/@splitWidth 
+    page = if @horizontal then orig.changedTouches[0].pageX else orig.changedTouches[0].pageY
+    @barPosition = @initBarPosition + (page-@initMouse)/@splitDist 
 
-  getLeft: ->
-    $('#'+@id+'>div:first')
-  getRight: ->
-    $('#'+@id+'>div:last')
+  getFirst: =>
+    @element.find('>div:first')
+  getSecond: =>
+    @element.find('>div:last')
 
-  setBarPosition: (pos) =>
-    if @docked
-      if pos > @barPositionMin/2
-        @lastOpenPos = @barPositionMin
-        return @undock()
-    else
-      if pos < @barPositionMin/2
-        return @dock()
-
-    pos = @barPositionMin if pos < @barPositionMin and not @docked
-    pos = @barPositionMax if pos > @barPositionMax
-    pos = 0 if pos < 0 or @docked
-    @barPosition = pos
-    @update()
-
-  toggleFullscreen: =>
-    me = $('#'+@id)
-    if not @fullscreen
-      me.addClass('hsplit-fullscreen')
-      @getRight().append '<div class="hsplit-toolbar">'+Touch   '<img onclick="$(\'#fsave a\').click()" src="/static/editorLib/hippiesplitter/link-save.png" alt="Save File">'+
-        '<img onclick="$(\'#fsnapshot a\').click()" src="/static/editorLib/hippiesplitter/link-snapshot.png" alt="Snapshot">'+
-        '<img onclick="$(\'#selected-app .menu a:last\').click()" src="/static/editorLib/hippiesplitter/link-settings.png" alt="Settings"></div>'
-    else
-      me.removeClass('hsplit-fullscreen')
-      @getRight().find('.hsplit-toolbar').remove()
-
-    @fullscreen = !@fullscreen
-    $(window).resize()
-    return @fullscreen
-
-  onResize: =>
-    @splitWidth = $('#'+@id).width()
-    @barWidth = 12/@splitWidth * 100 # bar width is 24px
-    $('#'+@id+' #splitter-bar').width @barWidth*2+'%'
-    @barPositionMin = @min / @splitWidth
-    @barPositionMax = @max / @splitWidth
-    @update()
-
-  update: =>
-    percLeft = @barPosition * 100
-    percRight = 100 - percLeft
-    percRight -= @barWidth*2
-    @getLeft().width percLeft+'%'
-    @getRight().width percRight+'%'
-    $('#'+@id+'>#splitter-bar').css 'left':percLeft+'%'
+  onResize:(event=null) =>
+    if event isnt null
+      event.stopPropagation()
+      return if not $(event.target).is @element
+    @barThickness = @barThicknessPx/@splitDist()
+    attr = if @horizontal then "width" else "height"
+    @element.find('>.splitter-bar').css attr, @barThickness*200+'%'
+    @barPositionMin = @min / @splitDist
+    @barPositionMax = @max / @splitDist
+    @setPercentages()
