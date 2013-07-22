@@ -40,19 +40,27 @@ class TouchSplitter
     @onResize()
     @element.on('resize', @onResize)
     $(window).on('resize', @onResizeWindow)
-    @setupMouseEvents()
+    $(window).on 'mousemove', @drag
+    @element.find('>.splitter-bar').on 'mousedown', @onMouseDown
+    @element.find('>.splitter-bar').bind 'touchstart', @onTouchStart
+    @element.on 'touchmove', @onTouchMove
+    @element.on 'touchend', @onTouchEnd
+    @element.on 'touchleave', @onTouchEnd
+    @element.on 'touchcancel', @onTouchEnd
     @setPercentages()
 
   splitDist: =>
     return @element.width() if @horizontal
     return @element.height()
 
+  on: (eventName, fn) =>
+    @element.on(eventName,fn)
+
   setPercentages: =>
     @barPosition = @barThickness if @barPosition < @barThickness
-    @barPosition = 1 - @barThickness if @barPosition > 1 -@barThickness
+    @barPosition = 1 - @barThickness if @barPosition > 1 - @barThickness
     first = @barPosition - @barThickness
     second = 1 - @barPosition - @barThickness
-    console.log first + " " + @barPosition
     attr = if @horizontal then "width" else "height"
     @getFirst().css attr, (100*first) + "%"
     @getSecond().css attr, (100*second) + "%"
@@ -60,17 +68,32 @@ class TouchSplitter
     e = jQuery.Event( "resize", { horizontal:@horizontal, } );
     @getFirst().trigger("resize")
     @getSecond().trigger("resize")
-  setupMouseEvents: =>
-    $(window).on 'mousemove', @drag
-    @element.find('.splitter-bar').on 'mousedown', @startDragging
-    @element.find('.splitter-bar').on 'touchstart', @touchStart
-    @element.find('.splitter-bar').on 'touchmove', @touchMove
+
+  onMouseDown: (event) =>
+    event.preventDefault()
+    @initMouse = if @horizontal then event.clientX else event.clientY
+    @startDragging(event)
+
+  onTouchStart: (event) =>
+    orig = event.originalEvent;
+    @initMouse = if @horizontal then orig.changedTouches[0].pageX else orig.changedTouches[0].pageY
+    @startDragging(event)
+
+  onTouchMove: (event) =>
+    return if not @dragging
+    event.preventDefault()
+    orig = event.originalEvent
+    page = if @horizontal then orig.changedTouches[0].pageX else orig.changedTouches[0].pageY
+    @barPosition = @initBarPosition + (page-@initMouse)/@splitDist()
+    @setPercentages()
+
+  onTouchEnd: (event) =>
+    @stopDragging(event)
 
   startDragging: (event) =>
-    @initMouse = if @horizontal then event.clientX else event.clientY
-    @dragging = true
     @initBarPosition = @barPosition
-    event.preventDefault()
+    @dragging = true
+    @element.trigger "dragstart"
 
   drag: (event) =>
     return if not @dragging
@@ -82,18 +105,10 @@ class TouchSplitter
     @setPercentages()
 
   stopDragging: (event) =>
-    @dragging = false
+    if @dragging
+      @dragging = false
+      @element.trigger "dragstop"
 
-  touchStart: (event) =>
-    orig = event.originalEvent;
-    @initMouse = if @horizontal then orig.changedTouches[0].pageX else orig.changedTouches[0].pageY
-    @initBarPosition = @barPosition
-
-  touchMove: (event) =>
-    event.preventDefault()
-    orig = event.originalEvent
-    page = if @horizontal then orig.changedTouches[0].pageX else orig.changedTouches[0].pageY
-    @barPosition = @initBarPosition + (page-@initMouse)/@splitDist 
 
   getFirst: =>
     @element.find('>div:first')
