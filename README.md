@@ -1,6 +1,10 @@
 # Touch-Splitter-jQuery
 ==================
 
+***Demo!***
+http://zombiehippie.com/ide/
+
+
 ### A high performance splitter system with events, compatible with touch screens
 
 ###Features:
