@@ -39,6 +39,7 @@ class TouchSplitter
 
     @onResize()
     @element.on('resize', @onResize)
+    $(window).on('resize', @onResizeWindow)
     @setupMouseEvents()
     @setPercentages()
 
@@ -47,12 +48,15 @@ class TouchSplitter
     return @element.height()
 
   setPercentages: =>
+    @barPosition = @barThickness if @barPosition < @barThickness
+    @barPosition = 1 - @barThickness if @barPosition > 1 -@barThickness
     first = @barPosition - @barThickness
     second = 1 - @barPosition - @barThickness
     console.log first + " " + @barPosition
     attr = if @horizontal then "width" else "height"
     @getFirst().css attr, (100*first) + "%"
     @getSecond().css attr, (100*second) + "%"
+    # Will want to use a siblings('.TouchSplitter') selector
     e = jQuery.Event( "resize", { horizontal:@horizontal, } );
     @getFirst().trigger("resize")
     @getSecond().trigger("resize")
@@ -96,11 +100,19 @@ class TouchSplitter
   getSecond: =>
     @element.find('>div:last')
 
+  onResizeWindow:(event=null) =>
+    @resize()
+
   onResize:(event=null) =>
     if event isnt null
       event.stopPropagation()
       return if not $(event.target).is @element
+    @resize()
+
+  resize: =>
     @barThickness = @barThicknessPx/@splitDist()
+    if @barThickness > 1
+      @barThickness = 1
     attr = if @horizontal then "width" else "height"
     @element.find('>.splitter-bar').css attr, @barThickness*200+'%'
     @barPositionMin = @min / @splitDist

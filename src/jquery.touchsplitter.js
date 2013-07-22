@@ -31,7 +31,9 @@ TouchSplitter = (function() {
     var firstdiv;
     this.element = element;
     this.horizontal = horizontal;
+    this.resize = __bind(this.resize, this);
     this.onResize = __bind(this.onResize, this);
+    this.onResizeWindow = __bind(this.onResizeWindow, this);
     this.getSecond = __bind(this.getSecond, this);
     this.getFirst = __bind(this.getFirst, this);
     this.touchMove = __bind(this.touchMove, this);
@@ -59,6 +61,7 @@ TouchSplitter = (function() {
     this.initBarPosition = 0;
     this.onResize();
     this.element.on('resize', this.onResize);
+    $(window).on('resize', this.onResizeWindow);
     this.setupMouseEvents();
     this.setPercentages();
   }
@@ -72,6 +75,12 @@ TouchSplitter = (function() {
 
   TouchSplitter.prototype.setPercentages = function() {
     var attr, e, first, second;
+    if (this.barPosition < this.barThickness) {
+      this.barPosition = this.barThickness;
+    }
+    if (this.barPosition > 1 - this.barThickness) {
+      this.barPosition = 1 - this.barThickness;
+    }
     first = this.barPosition - this.barThickness;
     second = 1 - this.barPosition - this.barThickness;
     console.log(first + " " + this.barPosition);
@@ -140,8 +149,14 @@ TouchSplitter = (function() {
     return this.element.find('>div:last');
   };
 
+  TouchSplitter.prototype.onResizeWindow = function(event) {
+    if (event == null) {
+      event = null;
+    }
+    return this.resize();
+  };
+
   TouchSplitter.prototype.onResize = function(event) {
-    var attr;
     if (event == null) {
       event = null;
     }
@@ -151,7 +166,15 @@ TouchSplitter = (function() {
         return;
       }
     }
+    return this.resize();
+  };
+
+  TouchSplitter.prototype.resize = function() {
+    var attr;
     this.barThickness = this.barThicknessPx / this.splitDist();
+    if (this.barThickness > 1) {
+      this.barThickness = 1;
+    }
     attr = this.horizontal ? "width" : "height";
     this.element.find('>.splitter-bar').css(attr, this.barThickness * 200 + '%');
     this.barPositionMin = this.min / this.splitDist;
