@@ -23,6 +23,7 @@ Then use an element with two divs inside it, to split it using the `$('#elem').s
 
 ### Options:
 > `$('#elem').split(options = {})
+
 #### Setup
 * `orientation`: "horizontal" or "vertical"
 

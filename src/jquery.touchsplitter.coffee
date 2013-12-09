@@ -24,13 +24,15 @@ class TouchSplitter
     @firstMin = options.leftMin || options.topMin || options.firstMin || 0
     @firstMax = options.leftMax || options.topMax || options.firstMax || 0
     @secondMin = options.rightMin || options.bottomMin || options.secondMin || 0
-    @SecondMax = options.rightMax || options.bottomMax || options.secondMax || 0
+    @secondMax = options.rightMax || options.bottomMax || options.secondMax || 0
     @isFirstBounded = if @firstMin is 0 and @firstMax is 0 then false else true
     @isSecondBounded = if @secondMin is 0 and @secondMax is 0 then false else true
 
+    @calcBounds()
+
     if @firstMax and @secondMax
       console.log "Touch Splitter ERROR: cannot set max bounds all sections!"
-    @secondMax = 0
+      @secondMax = 0
 
     # Create Splitter bar div
     firstdiv = @element.find ">div:first"
@@ -38,19 +40,29 @@ class TouchSplitter
       # Split it ourselves
       @element.append "
         <div></div>
-        <div class=\"splitter-bar\"></div>
+        <div class=\"splitter-bar\"><div></div></div>
         <div></div>"
     else
-      firstdiv.after "<div class=\"splitter-bar\"></div>"
-    @barThicknessPx = 10
+      firstdiv.after "<div class=\"splitter-bar\"><div></div></div>"
+    @barThicknessPx = options.barWidth || 10
     @barThickness = .04  # This represents half of the percent width
     @barPosition = 0.5
-    @barPositionMin = @min / @element.width()
-    @barPositionMax = @max / @element.width()
     @dragging = false
-    @docked = false
     @initMouse = 0
     @initBarPosition = 0
+
+    if options.dock?
+      if options.dock is "left" || options.dock is "top" || options.dock is "first"
+        @element.find('>.splitter-bar').addClass('dock first')
+        @dockFirst = true
+      else if options.dock is "right" || options.dock is "bottom" || options.dock is "second"
+        @element.find('>.splitter-bar').addClass('dock second')
+        @dockFirst = false
+      else
+        console.log "Touch Splitter ERROR: option{dock:'#{options.dock}'} invalid!"
+    
+    if @dockFirst?
+      @element.find('>.splitter-bar').on 'click', @toggleDock
 
     @onResize()
     @element.on('resize', @onResize)
@@ -68,11 +80,45 @@ class TouchSplitter
     return @element.width() if @horizontal
     return @element.height()
 
+  calcBounds: =>
+    for conv, val of {@firstMin, @firstMax, @secondMin, @secondMax}
+      @[conv+'Ratio'] = val / @splitDist()
+    if @barPosition > @firstMaxRatio + @barThickness and @firstMaxRatio
+      @barPosition = @firstMaxRatio
+      @setPercentages()
+    if @barPosition > @firstMaxRatio and @firstMaxRatio
+      @barPosition = @firstMaxRatio
+      @setPercentages()
+  
+  toggleDock: (event) =>
+    if not @docked
+      @barPosition = if @dockFirst then 0 else 1
+      @setPercentages()
+
   on: (eventName, fn) =>
     @element.on(eventName,fn)
 
-  moveBar: (page) =>
-    @barPosition = @initBarPosition + (page-@initMouse)/@splitDist()
+  moveBar: (newX) =>
+    cursorPos = @initBarPosition + (newX - @initMouse) / @splitDist()
+    if @isFirstBounded
+      @barPosition = switch
+        when cursorPos > @firstMaxRatio
+          @firstMaxRatio
+        when cursorPos < @firstMinRatio
+          @firstMinRatio
+        else
+          cursorPos
+    else if @isSecondBounded
+      @barPosition = switch
+        when cursorPos > @secondMaxRatio
+          @secondMaxRatio
+        when cursorPos < @secondMinRatio
+          @secondMinRatio
+        else
+          cursorPos
+    else
+      @barPosition = cursorPos
+    console.log @barPosition, @firstMaxRatio
     @setPercentages()
 
   setPercentages: =>
@@ -119,8 +165,7 @@ class TouchSplitter
     whichM = if typeof event.buttons isnt 'undefined' then event.buttons else event.which
     @stopDragging() if whichM is 0
     client = if @horizontal then event.clientX else event.clientY
-    @barPosition = @initBarPosition + (client-@initMouse)/@splitDist()
-    @setPercentages()
+    @moveBar client
 
   stopDragging: (event) =>
     if @dragging
@@ -144,10 +189,9 @@ class TouchSplitter
 
   resize: =>
     @barThickness = @barThicknessPx/@splitDist()
+    @calcBounds()
     if @barThickness > 1
       @barThickness = 1
     attr = if @horizontal then "width" else "height"
     @element.find('>.splitter-bar').css attr, @barThickness*200+'%'
-    @barPositionMin = @min / @splitDist
-    @barPositionMax = @max / @splitDist
     @setPercentages()

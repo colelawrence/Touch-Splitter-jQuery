@@ -10,14 +10,19 @@
 	float:left;}
 	.TouchSplitter.hTS>div.splitter-bar {width:8%;cursor:col-resize}
 	.TouchSplitter.vTS>div.splitter-bar {height:8%;cursor:row-resize}
-	.TouchSplitter>div.splitter-bar>span.dock-toggle {
-		background-image: url(/static/graphics/vdockbar-trans.gif);
+	.TouchSplitter>div.splitter-bar.dock>div {
+		width:24px;
+		height:24px;
 		background-repeat: no-repeat;
 		background-position: center;}
+	.TouchSplitter>div.splitter-bar.dock.first>div {
+		background-color: rgba(127,127,127,.7);}
+	.TouchSplitter>div.splitter-bar.dock.second>div {
+		background-color: rgba(0,0,0,.7);}
 
 .TouchSplitter,
 .TouchSplitter>div,
-.TouchSplitter>div.splitter-bar>span.dock-toggle{
+.TouchSplitter>div.splitter-bar>div{
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;}
