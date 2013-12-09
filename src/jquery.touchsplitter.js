@@ -8,29 +8,20 @@
 var TouchSplitter,
   __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-$.fn.horizontalSplit = function() {
+$.fn.touchSplit = function(options) {
+  if (options == null) {
+    options = {};
+  }
   if (this.children().length !== 2 && this.children().length !== 0) {
     throw "Cannot make a splitter here! Incorrect number of div children in " + this;
   }
-  this.addClass('TouchSplitter hTS');
-  return new TouchSplitter(this, true);
-};
-
-$.fn.verticalSplit = function() {
-  var childs;
-  childs = this.children().length;
-  if (childs !== 2 && childs !== 0) {
-    throw "Cannot make a splitter here! Incorrect number of div children in " + this;
-  }
-  this.addClass('TouchSplitter vTS');
-  return new TouchSplitter(this, false);
+  return new TouchSplitter(this, options);
 };
 
 TouchSplitter = (function() {
-  function TouchSplitter(element, horizontal) {
+  function TouchSplitter(element, options) {
     var firstdiv;
     this.element = element;
-    this.horizontal = horizontal;
     this.resize = __bind(this.resize, this);
     this.onResize = __bind(this.onResize, this);
     this.onResizeWindow = __bind(this.onResizeWindow, this);
@@ -44,8 +35,31 @@ TouchSplitter = (function() {
     this.onTouchStart = __bind(this.onTouchStart, this);
     this.onMouseDown = __bind(this.onMouseDown, this);
     this.setPercentages = __bind(this.setPercentages, this);
+    this.moveBar = __bind(this.moveBar, this);
     this.on = __bind(this.on, this);
     this.splitDist = __bind(this.splitDist, this);
+    if (options.orientation != null) {
+      if (options.orientation === "vertical") {
+        this.horizontal = false;
+      } else if (options.orientation === "horizontal") {
+        this.horizontal = true;
+      } else {
+        console.log("Touch Splitter ERROR: orientation cannot be:'" + options.orientation + "' defaulted to 'horizontal'");
+      }
+    } else {
+      this.horizontal = true;
+    }
+    this.element.addClass('TouchSplitter ' + (this.horizontal ? "hTS" : "vTS"));
+    this.firstMin = options.leftMin || options.topMin || options.firstMin || 0;
+    this.firstMax = options.leftMax || options.topMax || options.firstMax || 0;
+    this.secondMin = options.rightMin || options.bottomMin || options.secondMin || 0;
+    this.SecondMax = options.rightMax || options.bottomMax || options.secondMax || 0;
+    this.isFirstBounded = this.firstMin === 0 && this.firstMax === 0 ? false : true;
+    this.isSecondBounded = this.secondMin === 0 && this.secondMax === 0 ? false : true;
+    if (this.firstMax && this.secondMax) {
+      console.log("Touch Splitter ERROR: cannot set max bounds all sections!");
+    }
+    this.secondMax = 0;
     firstdiv = this.element.find(">div:first");
     if (firstdiv.length === 0) {
       this.element.append("        <div></div>        <div class=\"splitter-bar\"></div>        <div></div>");
@@ -83,6 +97,11 @@ TouchSplitter = (function() {
 
   TouchSplitter.prototype.on = function(eventName, fn) {
     return this.element.on(eventName, fn);
+  };
+
+  TouchSplitter.prototype.moveBar = function(page) {
+    this.barPosition = this.initBarPosition + (page - this.initMouse) / this.splitDist();
+    return this.setPercentages();
   };
 
   TouchSplitter.prototype.setPercentages = function() {
@@ -126,8 +145,7 @@ TouchSplitter = (function() {
     event.preventDefault();
     orig = event.originalEvent;
     page = this.horizontal ? orig.changedTouches[0].pageX : orig.changedTouches[0].pageY;
-    this.barPosition = this.initBarPosition + (page - this.initMouse) / this.splitDist();
-    return this.setPercentages();
+    return this.moveBar(page);
   };
 
   TouchSplitter.prototype.onTouchEnd = function(event) {

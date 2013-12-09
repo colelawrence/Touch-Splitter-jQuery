@@ -7,6 +7,7 @@
 		width:100%;
 		height:100%;
 	}
+	body{margin:0;}
 		.split-me>div{
 			background-color: orange;
 		}
@@ -28,7 +29,7 @@
 	</style>
 </head>
 <body>
-	<div class="split-me 1">
+	<div class="split-me">
 		<div></div>
 		<div></div>
 	</div>
@@ -37,12 +38,8 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="src/jquery.touchsplitter.js"></script>
 	<script>
-		touchSplitter1 = $('.split-me.1').horizontalSplit()
-		touchSplitter1.getFirst().verticalSplit()
-		var s2 = touchSplitter1.getSecond().verticalSplit()
-		for(var i=0; i<4 ; i++) {
-			s2 = s2.getSecond().horizontalSplit().getSecond().verticalSplit()
-		}
+		touchSplitter1 = $('.split-me').touchSplit({leftMax:"200px", leftMin:"100px"})
+		touchSplitter1.getFirst().touchSplit({orientation:"vertical"})
 	</script>
 </body>
 </html>
