@@ -32,16 +32,25 @@ class TouchSplitter
       console.log "Touch Splitter ERROR: cannot set max bounds all sections!"
     @secondMax = 0
 
+    if options.dock?
+      @dock = options.dock if options.dock is 'left' or options.dock is 'right'
+      @element.addClass 'docks-'+@dock
+    @dock ?= false
+
     # Create Splitter bar div
     firstdiv = @element.find ">div:first"
+    splitterHTML = "<div class=\"splitter-bar\">#{if @dock then '<div></div>' else ''}</div>"
     if firstdiv.length is 0
       # Split it ourselves
       @element.append "
         <div></div>
-        <div class=\"splitter-bar\"></div>
+        #{splitterHTML}
         <div></div>"
     else
-      firstdiv.after "<div class=\"splitter-bar\"></div>"
+      firstdiv.after splitterHTML
+
+    if @dock
+      @element.find('>.splitter-bar>div').click @toggleDock
     @barThicknessPx = 10
     @barThickness = .04  # This represents half of the percent width
     @barPosition = 0.5
@@ -68,18 +77,28 @@ class TouchSplitter
     return @element.width() if @horizontal
     return @element.height()
 
+  toggleDock:(event = null) =>
+    @element.toggleClass 'docked'
+    @docked=not @docked
+    @setPercentages()
   on: (eventName, fn) =>
     @element.on(eventName,fn)
 
   moveBar: (page) =>
     @barPosition = @initBarPosition + (page-@initMouse)/@splitDist()
+
     @setPercentages()
 
   setPercentages: =>
-    @barPosition = @barThickness if @barPosition < @barThickness
-    @barPosition = 1 - @barThickness if @barPosition > 1 - @barThickness
-    first = @barPosition - @barThickness
-    second = 1 - @barPosition - @barThickness
+    pos = @barPosition
+    if @docked
+      pos = if @docks is 'left' then 0 else 1
+    pos = @barThickness if pos < @barThickness
+    pos = 1 - @barThickness if pos > 1 - @barThickness
+    if not @docked
+      @barPosition = pos
+    first = pos - @barThickness
+    second = 1 - pos - @barThickness
     attr = if @horizontal then "width" else "height"
     @getFirst().css attr, (100*first) + "%"
     @getSecond().css attr, (100*second) + "%"

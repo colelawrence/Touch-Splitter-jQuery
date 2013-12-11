@@ -16,8 +16,11 @@
 		background-position: center;}
 
 .TouchSplitter,
-.TouchSplitter>div,
-.TouchSplitter>div.splitter-bar>span.dock-toggle{
+.TouchSplitter>div.splitter-bar>div{
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;}
+
+.TouchSplitter>div.splitter-bar>div{
+	width:24px;height:24px;
+}

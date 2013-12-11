@@ -20,7 +20,7 @@ $.fn.touchSplit = function(options) {
 
 TouchSplitter = (function() {
   function TouchSplitter(element, options) {
-    var firstdiv;
+    var firstdiv, splitterHTML;
     this.element = element;
     this.resize = __bind(this.resize, this);
     this.onResize = __bind(this.onResize, this);
@@ -37,6 +37,7 @@ TouchSplitter = (function() {
     this.setPercentages = __bind(this.setPercentages, this);
     this.moveBar = __bind(this.moveBar, this);
     this.on = __bind(this.on, this);
+    this.toggleDock = __bind(this.toggleDock, this);
     this.splitDist = __bind(this.splitDist, this);
     if (options.orientation != null) {
       if (options.orientation === "vertical") {
@@ -60,11 +61,24 @@ TouchSplitter = (function() {
       console.log("Touch Splitter ERROR: cannot set max bounds all sections!");
     }
     this.secondMax = 0;
+    if (options.dock != null) {
+      if (options.dock === 'left' || options.dock === 'right') {
+        this.dock = options.dock;
+      }
+      this.element.addClass('docks-' + this.dock);
+    }
+    if (this.dock == null) {
+      this.dock = false;
+    }
     firstdiv = this.element.find(">div:first");
+    splitterHTML = "<div class=\"splitter-bar\">" + (this.dock ? '<div></div>' : '') + "</div>";
     if (firstdiv.length === 0) {
-      this.element.append("        <div></div>        <div class=\"splitter-bar\"></div>        <div></div>");
+      this.element.append("        <div></div>        " + splitterHTML + "        <div></div>");
     } else {
-      firstdiv.after("<div class=\"splitter-bar\"></div>");
+      firstdiv.after(splitterHTML);
+    }
+    if (this.dock) {
+      this.element.find('>.splitter-bar>div').click(this.toggleDock);
     }
     this.barThicknessPx = 10;
     this.barThickness = .04;
@@ -95,6 +109,15 @@ TouchSplitter = (function() {
     return this.element.height();
   };
 
+  TouchSplitter.prototype.toggleDock = function(event) {
+    if (event == null) {
+      event = null;
+    }
+    this.element.toggleClass('docked');
+    this.docked = !this.docked;
+    return this.setPercentages();
+  };
+
   TouchSplitter.prototype.on = function(eventName, fn) {
     return this.element.on(eventName, fn);
   };
@@ -105,15 +128,22 @@ TouchSplitter = (function() {
   };
 
   TouchSplitter.prototype.setPercentages = function() {
-    var attr, e, first, second;
-    if (this.barPosition < this.barThickness) {
-      this.barPosition = this.barThickness;
+    var attr, e, first, pos, second;
+    pos = this.barPosition;
+    if (this.docked) {
+      pos = this.docks === 'left' ? 0 : 1;
     }
-    if (this.barPosition > 1 - this.barThickness) {
-      this.barPosition = 1 - this.barThickness;
+    if (pos < this.barThickness) {
+      pos = this.barThickness;
     }
-    first = this.barPosition - this.barThickness;
-    second = 1 - this.barPosition - this.barThickness;
+    if (pos > 1 - this.barThickness) {
+      pos = 1 - this.barThickness;
+    }
+    if (!this.docked) {
+      this.barPosition = pos;
+    }
+    first = pos - this.barThickness;
+    second = 1 - pos - this.barThickness;
     attr = this.horizontal ? "width" : "height";
     this.getFirst().css(attr, (100 * first) + "%");
     this.getSecond().css(attr, (100 * second) + "%");
