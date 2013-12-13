@@ -81,11 +81,6 @@ TouchSplitter = (function() {
     if (this.dock) {
       this.element.find('>.splitter-bar>div').click(this.toggleDock);
     }
-    this.calcBounds();
-    if (this.firstMax && this.secondMax) {
-      console.log("Touch Splitter ERROR: cannot set max bounds all sections!");
-      this.secondMax = 0;
-    }
     this.barThicknessPx = options.barWidth || 10;
     this.barThickness = .04;
     this.barPosition = 0.5;

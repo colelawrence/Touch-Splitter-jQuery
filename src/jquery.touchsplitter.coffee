@@ -51,12 +51,6 @@ class TouchSplitter
 
     if @dock
       @element.find('>.splitter-bar>div').click @toggleDock
-    @calcBounds()
-
-    if @firstMax and @secondMax
-      console.log "Touch Splitter ERROR: cannot set max bounds all sections!"
-      @secondMax = 0
-
     @barThicknessPx = options.barWidth || 10
     @barThickness = .04  # This represents half of the percent width
     @barPosition = 0.5

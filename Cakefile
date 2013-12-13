@@ -1,7 +1,4 @@
 {spawn, exec} = require 'child_process'
-
-option '-m', '--minify', 'minify after compilation'
-
 build = (watch=false) ->
   filepath = './src/jquery.touchsplitter.coffee'
   coffee = spawn 'cmd', ["/c", "coffee", "-j", filepath.replace(/.coffee$/, ".js"), "-bc"+(if watch then "w" else "")].concat [filepath]
