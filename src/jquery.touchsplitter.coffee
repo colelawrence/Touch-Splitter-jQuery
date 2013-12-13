@@ -28,41 +28,41 @@ class TouchSplitter
     @isFirstBounded = if @firstMin is 0 and @firstMax is 0 then false else true
     @isSecondBounded = if @secondMin is 0 and @secondMax is 0 then false else true
 
+    if @firstMax and @secondMax
+      console.log "Touch Splitter ERROR: cannot set max bounds all sections!"
+    @secondMax = 0
+
+    if options.dock?
+      @dock = options.dock if options.dock is 'left' or options.dock is 'right'
+      @element.addClass 'docks-'+@dock
+    @dock ?= false
+
+    # Create Splitter bar div
+    firstdiv = @element.find ">div:first"
+    splitterHTML = "<div class=\"splitter-bar\">#{if @dock then '<div></div>' else ''}</div>"
+    if firstdiv.length is 0
+      # Split it ourselves
+      @element.append "
+        <div></div>
+        #{splitterHTML}
+        <div></div>"
+    else
+      firstdiv.after splitterHTML
+
+    if @dock
+      @element.find('>.splitter-bar>div').click @toggleDock
     @calcBounds()
 
     if @firstMax and @secondMax
       console.log "Touch Splitter ERROR: cannot set max bounds all sections!"
       @secondMax = 0
 
-    # Create Splitter bar div
-    firstdiv = @element.find ">div:first"
-    if firstdiv.length is 0
-      # Split it ourselves
-      @element.append "
-        <div></div>
-        <div class=\"splitter-bar\"><div></div></div>
-        <div></div>"
-    else
-      firstdiv.after "<div class=\"splitter-bar\"><div></div></div>"
     @barThicknessPx = options.barWidth || 10
     @barThickness = .04  # This represents half of the percent width
     @barPosition = 0.5
     @dragging = false
     @initMouse = 0
     @initBarPosition = 0
-
-    if options.dock?
-      if options.dock is "left" || options.dock is "top" || options.dock is "first"
-        @element.find('>.splitter-bar').addClass('dock first')
-        @dockFirst = true
-      else if options.dock is "right" || options.dock is "bottom" || options.dock is "second"
-        @element.find('>.splitter-bar').addClass('dock second')
-        @dockFirst = false
-      else
-        console.log "Touch Splitter ERROR: option{dock:'#{options.dock}'} invalid!"
-    
-    if @dockFirst?
-      @element.find('>.splitter-bar').on 'click', @toggleDock
 
     @onResize()
     @element.on('resize', @onResize)
@@ -89,12 +89,11 @@ class TouchSplitter
     if @barPosition > @firstMaxRatio and @firstMaxRatio
       @barPosition = @firstMaxRatio
       @setPercentages()
-  
-  toggleDock: (event) =>
-    if not @docked
-      @barPosition = if @dockFirst then 0 else 1
-      @setPercentages()
 
+  toggleDock:(event = null) =>
+    @element.toggleClass 'docked'
+    @docked=not @docked
+    @setPercentages()
   on: (eventName, fn) =>
     @element.on(eventName,fn)
 
@@ -118,14 +117,18 @@ class TouchSplitter
           cursorPos
     else
       @barPosition = cursorPos
-    console.log @barPosition, @firstMaxRatio
     @setPercentages()
 
   setPercentages: =>
-    @barPosition = @barThickness if @barPosition < @barThickness
-    @barPosition = 1 - @barThickness if @barPosition > 1 - @barThickness
-    first = @barPosition - @barThickness
-    second = 1 - @barPosition - @barThickness
+    pos = @barPosition
+    if @docked
+      pos = if @dock is 'left' then 0 else 1
+    pos = @barThickness if pos < @barThickness
+    pos = 1 - @barThickness if pos > 1 - @barThickness
+    if not @docked
+      @barPosition = pos
+    first = pos - @barThickness
+    second = 1 - pos - @barThickness
     attr = if @horizontal then "width" else "height"
     @getFirst().css attr, (100*first) + "%"
     @getSecond().css attr, (100*second) + "%"
