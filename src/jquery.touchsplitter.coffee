@@ -9,32 +9,51 @@ $.fn.touchSplit = (options = {}) ->
   new TouchSplitter(this, options)
 class TouchSplitter
   constructor: (@element, options) ->
+    @element.addClass 'TouchSplitter'
+    # Support
+    @support = {}
+
+    # em size
+    testEm = $ '<div class="test-em"></div>'
+    testEm.appendTo @element
+    emWidth = testEm.width()
+    testEm.remove()
+
+    # calc
+    testCalc = $ '<div class="test-calc"></div>'
+    testCalc.appendTo @element
+    @support.calc = 20 is parseInt testCalc.width()
+    testCalc.remove()
+
     # Orientation
     if options.orientation?
       if options.orientation is "vertical"
         @horizontal = false
       else if options.orientation is "horizontal"
-        @horizontal = true
       else
         console.log "Touch Splitter ERROR: orientation cannot be:'" + options.orientation + "' defaulted to 'horizontal'"
-    else
-      @horizontal = true
-    @element.addClass('TouchSplitter '+ if @horizontal then "hTS" else "vTS")
 
+    @horizontal = true if @horizontal isnt false
+    @element.addClass(if @horizontal then "h-ts" else "v-ts")
+
+    # Minimums and maximums
     @firstMin = options.leftMin || options.topMin || options.firstMin || 0
     @firstMax = options.leftMax || options.topMax || options.firstMax || 0
     @secondMin = options.rightMin || options.bottomMin || options.secondMin || 0
     @secondMax = options.rightMax || options.bottomMax || options.secondMax || 0
-    @isFirstBounded = if @firstMin is 0 and @firstMax is 0 then false else true
-    @isSecondBounded = if @secondMin is 0 and @secondMax is 0 then false else true
+    @isFirstBounded = @firstMin isnt 0 or @firstMax isnt 0
+    @isSecondBounded = @secondMin isnt 0 or @secondMax isnt 0
 
     if @firstMax and @secondMax
-      console.log "Touch Splitter ERROR: cannot set max bounds all sections!"
+      console.log "Touch Splitter ERROR: cannot set max bounds of both first and second sections!"
     @secondMax = 0
 
+    # Docking
     if options.dock?
-      @dock = options.dock if options.dock is 'left' or options.dock is 'right'
-      @element.addClass 'docks-'+@dock
+      if /left|right|top|bottom/.test options.dock
+        @dock = /left|top/.test options.dock
+        @dock = if @dock then "first" else "second"
+        @element.addClass 'docks-' + @dock
     @dock ?= false
 
     # Create Splitter bar div
@@ -51,8 +70,9 @@ class TouchSplitter
 
     if @dock
       @element.find('>.splitter-bar>div').click @toggleDock
-    @barThicknessPx = options.barWidth || 10
-    @barThickness = .04  # This represents half of the percent width
+
+    @barThicknessPx = emWidth / 2
+    @barThickness = .04  # half of the percent width
     @barPosition = 0.5
     @dragging = false
     @initMouse = 0
@@ -116,16 +136,27 @@ class TouchSplitter
   setPercentages: =>
     pos = @barPosition
     if @docked
-      pos = if @dock is 'left' then 0 else 1
-    pos = @barThickness if pos < @barThickness
-    pos = 1 - @barThickness if pos > 1 - @barThickness
-    if not @docked
-      @barPosition = pos
-    first = pos - @barThickness
-    second = 1 - pos - @barThickness
+      pos = if @dock is 'first' then 0 else 1
+    firstCss = secondCss = ""
+    if not @support.calc
+      pos = @barThickness if pos < @barThickness
+      pos = 1 - @barThickness if pos > 1 - @barThickness
+      if not @docked
+        @barPosition = pos
+      first = pos - @barThickness
+      second = 1 - pos - @barThickness
+      firstCss = "#{ 100*first - @barThickness}%"
+      secondCss = "#{ 100*second - @barThickness}%"
+    else
+      shave = @barThicknessPx
+      shave *= 2 if @docked
+      pos *= 100
+      firstCss = "calc(#{ pos }% - #{ shave }px)"
+      secondCss = "calc(#{ 100-pos }% - #{ shave }px)"
+
     attr = if @horizontal then "width" else "height"
-    @getFirst().css attr, (100*first) + "%"
-    @getSecond().css attr, (100*second) + "%"
+    @getFirst().css attr, firstCss
+    @getSecond().css attr, secondCss
     # Will want to use a siblings('.TouchSplitter') selector
     e = jQuery.Event( "resize", { horizontal:@horizontal } );
     @getFirst().trigger("resize")
@@ -185,10 +216,13 @@ class TouchSplitter
     @resize()
 
   resize: =>
-    @barThickness = @barThicknessPx/@splitDist()
     @calcBounds()
-    if @barThickness > 1
-      @barThickness = 1
     attr = if @horizontal then "width" else "height"
-    @element.find('>.splitter-bar').css attr, @barThickness*200+'%'
+    if not @support.calc
+      @barThickness = @barThicknessPx/@splitDist()
+      if @barThickness > 1
+        @barThickness = 1
+      @element.find('>.splitter-bar').css attr, @barThickness*200+'%'
+    else
+      @barThickness = 0
     @setPercentages()
