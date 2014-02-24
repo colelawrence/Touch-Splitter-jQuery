@@ -11,7 +11,7 @@ A high performance html splitter compatible with touch events
 This is our basic page that is pictured above. You can see the source in the [index.html](/index.html) file.
 
 ####[Quick Test CoffeeScript](http://zombiehippie.github.io/Quick-Test-CoffeeScript/)
-Basic ide that uses two different splitters, one vertical splitter, then a horizontal splitter that divides the source from the compiled.
+Basic ide that uses two different splitters, one vertical splitter, then a horizontal splitter that divides the source from the compiled javascript.
 
 ## Example Setup
 It is highly recommended that your splitter container has a relative, absolute, or fixed `position`
