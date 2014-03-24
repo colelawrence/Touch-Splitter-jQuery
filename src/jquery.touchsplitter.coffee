@@ -22,7 +22,7 @@ class TouchSplitter
     # calc
     testCalc = $ '<div class="test-calc"></div>'
     testCalc.appendTo @element
-    @support.calc = 20 is parseInt testCalc.width()
+    @support.calc = false #20 is parseInt testCalc.width()
     testCalc.remove()
 
     # Orientation
@@ -38,11 +38,11 @@ class TouchSplitter
 
     # Minimums and maximums
     @firstMin = options.leftMin || options.topMin || options.firstMin || 0
-    @firstMax = options.leftMax || options.topMax || options.firstMax || 0
+    @firstMax = options.leftMax || options.topMax || options.firstMax || false
     @secondMin = options.rightMin || options.bottomMin || options.secondMin || 0
-    @secondMax = options.rightMax || options.bottomMax || options.secondMax || 0
-    @isFirstBounded = @firstMin isnt 0 or @firstMax isnt 0
-    @isSecondBounded = @secondMin isnt 0 or @secondMax isnt 0
+    @secondMax = options.rightMax || options.bottomMax || options.secondMax || false
+    @isFirstBounded = !!@firstMin or !!@firstMax
+    @isSecondBounded = !!@secondMin or !!@secondMax
 
     if @firstMax and @secondMax
       console.log "Touch Splitter ERROR: cannot set max bounds of both first and second sections!"
@@ -51,7 +51,7 @@ class TouchSplitter
     # Docking
     if options.dock?
       if /left|right|top|bottom/.test options.dock
-        @dock = /left|top/.test options.dock
+        @dock = /left|top|first/.test options.dock
         @dock = if @dock then "first" else "second"
         @element.addClass 'docks-' + @dock
     @dock ?= false
@@ -93,50 +93,54 @@ class TouchSplitter
   splitDist: =>
     return @element.width() if @horizontal
     return @element.height()
-
-  calcBounds: =>
+  setRatios: =>
     for conv, val of {@firstMin, @firstMax, @secondMin, @secondMax}
-      @[conv+'Ratio'] = val / @splitDist()
-    if @barPosition > @firstMaxRatio + @barThickness and @firstMaxRatio
-      @barPosition = @firstMaxRatio
-      @setPercentages()
-    if @barPosition > @firstMaxRatio and @firstMaxRatio
-      @barPosition = @firstMaxRatio
-      @setPercentages()
+      if val
+        @[conv+'Ratio'] = val / @splitDist()
+    @moveBar(@initMouse) # Conform to bounds
 
   toggleDock:(event = null) =>
     @element.toggleClass 'docked'
-    @docked=not @docked
+    @docked = if not @docked then @dock else false
     @setPercentages()
   on: (eventName, fn) =>
     @element.on(eventName,fn)
 
   moveBar: (newX) =>
-    cursorPos = @initBarPosition + (newX - @initMouse) / @splitDist()
-    if @isFirstBounded
-      @barPosition = switch
-        when cursorPos > @firstMaxRatio
-          @firstMaxRatio
-        when cursorPos < @firstMinRatio
-          @firstMinRatio
-        else
-          cursorPos
-    else if @isSecondBounded
-      @barPosition = switch
-        when cursorPos > @secondMaxRatio
-          @secondMaxRatio
-        when cursorPos < @secondMinRatio
-          @secondMinRatio
-        else
-          cursorPos
-    else
-      @barPosition = cursorPos
+    cursorPos = @initBarPosition + (newX - @initMouse) / @splitDist() # = range [0,1]
+    cursorPos2 = 1 - cursorPos
+    switch @docked
+      when 'first'
+        if cursorPos > @firstMinRatio / 2
+          @docked = null
+      when 'second'
+        if cursorPos2 > @secondMinRatio / 2
+          @docked = null
+      else
+        if cursorPos2 < @secondMinRatio / 2
+          @docked = 'second'
+        if cursorPos < @firstMinRatio / 2
+          @docked = 'first'
+    @barPosition = switch
+      when @firstMaxRatio and cursorPos > @firstMaxRatio
+        @firstMaxRatio
+      when cursorPos < @firstMinRatio
+        @firstMinRatio
+      when @secondMaxRatio and cursorPos2 > @secondMaxRatio
+        1 - @secondMaxRatio
+      when cursorPos2 < @secondMinRatio
+        1 - @secondMinRatio
+      else
+        cursorPos
     @setPercentages()
 
   setPercentages: =>
     pos = @barPosition
-    if @docked
-      pos = if @dock is 'first' then 0 else 1
+    switch @docked
+      when 'first'
+        pos = 0
+      when 'second'
+        pos = 1
     firstCss = secondCss = ""
     if not @support.calc
       pos = @barThickness if pos < @barThickness
@@ -158,9 +162,9 @@ class TouchSplitter
     @getFirst().css attr, firstCss
     @getSecond().css attr, secondCss
     # Will want to use a siblings('.TouchSplitter') selector
-    e = jQuery.Event( "resize", { horizontal:@horizontal } );
-    @getFirst().trigger("resize")
-    @getSecond().trigger("resize")
+    #e = jQuery.Event( "resize", { horizontal:@horizontal } );
+    #@getFirst().trigger("resize")
+    #@getSecond().trigger("resize")
 
   onMouseDown: (event) =>
     event.preventDefault()
@@ -200,23 +204,22 @@ class TouchSplitter
       @dragging = false
       @element.trigger "dragstop"
 
-
   getFirst: =>
     @element.find('>div:first')
   getSecond: =>
     @element.find('>div:last')
 
-  onResizeWindow:(event=null) =>
+  onResizeWindow:(event) =>
     @resize()
 
-  onResize:(event=null) =>
-    if event isnt null
+  onResize:(event) =>
+    if event?
       event.stopPropagation()
       return if not $(event.target).is @element
     @resize()
 
   resize: =>
-    @calcBounds()
+    @setRatios()
     attr = if @horizontal then "width" else "height"
     if not @support.calc
       @barThickness = @barThicknessPx/@splitDist()

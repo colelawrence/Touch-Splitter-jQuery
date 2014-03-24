@@ -9,7 +9,10 @@ A high performance html splitter compatible with touch events
 
 ```npm install touch-splitter-jquery```
 
-You can then use the compiled `./node_modules/touch-splitter-jquery/src/jquery.touchsplitter.js` in your client resources.
+You can then use the compiled javascript and css in your client resources.
+
+ * `./node_modules/touch-splitter-jquery/src/jquery.touchsplitter.js`
+ * `./node_modules/touch-splitter-jquery/src/touchsplitter.css`
 
 
 ##**Demos**
