@@ -50,25 +50,29 @@ class TouchSplitter
 
     # Docking
     if options.dock?
-      if /left|right|top|bottom/.test options.dock
-        @dock = /left|top|first/.test options.dock
-        @dock = if @dock then "first" else "second"
-        @element.addClass 'docks-' + @dock
-    @dock ?= false
+      if /both|left|top|first|right|bottom|second/i.test options.dock
+        @docks = switch
+          when /both/i.test options.dock then { first: true, second: true, name: "both" }
+          when /left|top|first/i.test options.dock then { first: true, second: false, name: "first" }
+          when /right|bottom|second/i.test options.dock then { first: false, second: true, name: "second" }
+    if @docks then @element.addClass 'docks-' + @docks.name
+    else @docks = { first: false, second: false, name: false }
 
     # Create Splitter bar div
     firstdiv = @element.find ">div:first"
-    splitterHTML = "<div class=\"splitter-bar\">#{if @dock then '<div></div>' else ''}</div>"
+    splitterHTML = "<div class=\"splitter-bar\">#{if (@docks.name and @docks.name.match(/first|second/)) then '<div></div>' else ''}</div>"
     if firstdiv.length is 0
+      inners = @element.html()
       # Split it ourselves
-      @element.append "
+      @element.html "
         <div></div>
         #{splitterHTML}
         <div></div>"
+      @element.find(">div:first").html(inners)
     else
       firstdiv.after splitterHTML
 
-    if @dock
+    if @docks.name and @docks.name isnt 'both'
       @element.find('>.splitter-bar>div').click @toggleDock
 
     @barThicknessPx = emWidth / 2
@@ -78,7 +82,7 @@ class TouchSplitter
     @initMouse = 0
     @initBarPosition = 0
 
-    @onResize()
+    @resize()
     @element.on('resize', @onResize)
     $(window).on('resize', @onResizeWindow)
     $(window).on 'mousemove', @drag
@@ -88,39 +92,39 @@ class TouchSplitter
     @element.on 'touchend', @onTouchEnd
     @element.on 'touchleave', @onTouchEnd
     @element.on 'touchcancel', @onTouchEnd
-    @setPercentages()
 
-  splitDist: =>
-    return @element.width() if @horizontal
-    return @element.height()
   setRatios: =>
+    @splitDistance = if @horizontal then @element.width() else @element.height()
     for conv, val of {@firstMin, @firstMax, @secondMin, @secondMax}
       if val
-        @[conv+'Ratio'] = val / @splitDist()
-    @moveBar(@initMouse) # Conform to bounds
+        @[conv+'Ratio'] = val / @splitDistance
+    @moveBar() # Conform to bounds
 
   toggleDock:(event = null) =>
     @element.toggleClass 'docked'
-    @docked = if not @docked then @dock else false
+    @docked = if not @docked then @docks.name else false
     @setPercentages()
   on: (eventName, fn) =>
     @element.on(eventName,fn)
 
   moveBar: (newX) =>
-    cursorPos = @initBarPosition + (newX - @initMouse) / @splitDist() # = range [0,1]
+    cursorPos = .5
+    if newX?
+      cursorPos = @initBarPosition + (newX - @initMouse) / @splitDistance # = range [0,1]
     cursorPos2 = 1 - cursorPos
-    switch @docked
-      when 'first'
-        if cursorPos > @firstMinRatio / 2
-          @docked = null
-      when 'second'
-        if cursorPos2 > @secondMinRatio / 2
-          @docked = null
-      else
-        if cursorPos2 < @secondMinRatio / 2
-          @docked = 'second'
-        if cursorPos < @firstMinRatio / 2
-          @docked = 'first'
+    if @docks.name
+      switch @docked
+        when 'first'
+          if cursorPos > @firstMinRatio / 2
+            @docked = null
+        when 'second'
+          if cursorPos2 > @secondMinRatio / 2
+            @docked = null
+        else
+          if @docks.first and cursorPos < @firstMinRatio / 2
+            @docked = 'first'
+          if @docks.second and cursorPos2 < @secondMinRatio / 2
+            @docked = 'second'
     @barPosition = switch
       when @firstMaxRatio and cursorPos > @firstMaxRatio
         @firstMaxRatio
@@ -222,7 +226,7 @@ class TouchSplitter
     @setRatios()
     attr = if @horizontal then "width" else "height"
     if not @support.calc
-      @barThickness = @barThicknessPx/@splitDist()
+      @barThickness = @barThicknessPx / @splitDistance
       if @barThickness > 1
         @barThickness = 1
       @element.find('>.splitter-bar').css attr, @barThickness*200+'%'

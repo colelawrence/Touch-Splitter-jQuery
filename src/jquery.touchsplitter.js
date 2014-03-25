@@ -20,7 +20,7 @@ $.fn.touchSplit = function(options) {
 
 TouchSplitter = (function() {
   function TouchSplitter(element, options) {
-    var emWidth, firstdiv, splitterHTML, testCalc, testEm;
+    var emWidth, firstdiv, inners, splitterHTML, testCalc, testEm;
     this.element = element;
     this.resize = __bind(this.resize, this);
     this.onResize = __bind(this.onResize, this);
@@ -39,7 +39,6 @@ TouchSplitter = (function() {
     this.on = __bind(this.on, this);
     this.toggleDock = __bind(this.toggleDock, this);
     this.setRatios = __bind(this.setRatios, this);
-    this.splitDist = __bind(this.splitDist, this);
     this.element.addClass('TouchSplitter');
     this.support = {};
     testEm = $('<div class="test-em"></div>');
@@ -74,23 +73,50 @@ TouchSplitter = (function() {
     }
     this.secondMax = 0;
     if (options.dock != null) {
-      if (/left|right|top|bottom/.test(options.dock)) {
-        this.dock = /left|top|first/.test(options.dock);
-        this.dock = this.dock ? "first" : "second";
-        this.element.addClass('docks-' + this.dock);
+      if (/both|left|top|first|right|bottom|second/i.test(options.dock)) {
+        this.docks = (function() {
+          switch (false) {
+            case !/both/i.test(options.dock):
+              return {
+                first: true,
+                second: true,
+                name: "both"
+              };
+            case !/left|top|first/i.test(options.dock):
+              return {
+                first: true,
+                second: false,
+                name: "first"
+              };
+            case !/right|bottom|second/i.test(options.dock):
+              return {
+                first: false,
+                second: true,
+                name: "second"
+              };
+          }
+        })();
       }
     }
-    if (this.dock == null) {
-      this.dock = false;
+    if (this.docks) {
+      this.element.addClass('docks-' + this.docks.name);
+    } else {
+      this.docks = {
+        first: false,
+        second: false,
+        name: false
+      };
     }
     firstdiv = this.element.find(">div:first");
-    splitterHTML = "<div class=\"splitter-bar\">" + (this.dock ? '<div></div>' : '') + "</div>";
+    splitterHTML = "<div class=\"splitter-bar\">" + (this.docks.name && this.docks.name.match(/first|second/) ? '<div></div>' : '') + "</div>";
     if (firstdiv.length === 0) {
-      this.element.append("<div></div> " + splitterHTML + " <div></div>");
+      inners = this.element.html();
+      this.element.html("<div></div> " + splitterHTML + " <div></div>");
+      this.element.find(">div:first").html(inners);
     } else {
       firstdiv.after(splitterHTML);
     }
-    if (this.dock) {
+    if (this.docks.name && this.docks.name !== 'both') {
       this.element.find('>.splitter-bar>div').click(this.toggleDock);
     }
     this.barThicknessPx = emWidth / 2;
@@ -99,7 +125,7 @@ TouchSplitter = (function() {
     this.dragging = false;
     this.initMouse = 0;
     this.initBarPosition = 0;
-    this.onResize();
+    this.resize();
     this.element.on('resize', this.onResize);
     $(window).on('resize', this.onResizeWindow);
     $(window).on('mousemove', this.drag);
@@ -109,18 +135,11 @@ TouchSplitter = (function() {
     this.element.on('touchend', this.onTouchEnd);
     this.element.on('touchleave', this.onTouchEnd);
     this.element.on('touchcancel', this.onTouchEnd);
-    this.setPercentages();
   }
-
-  TouchSplitter.prototype.splitDist = function() {
-    if (this.horizontal) {
-      return this.element.width();
-    }
-    return this.element.height();
-  };
 
   TouchSplitter.prototype.setRatios = function() {
     var conv, val, _ref;
+    this.splitDistance = this.horizontal ? this.element.width() : this.element.height();
     _ref = {
       firstMin: this.firstMin,
       firstMax: this.firstMax,
@@ -130,10 +149,10 @@ TouchSplitter = (function() {
     for (conv in _ref) {
       val = _ref[conv];
       if (val) {
-        this[conv + 'Ratio'] = val / this.splitDist();
+        this[conv + 'Ratio'] = val / this.splitDistance;
       }
     }
-    return this.moveBar(this.initMouse);
+    return this.moveBar();
   };
 
   TouchSplitter.prototype.toggleDock = function(event) {
@@ -141,7 +160,7 @@ TouchSplitter = (function() {
       event = null;
     }
     this.element.toggleClass('docked');
-    this.docked = !this.docked ? this.dock : false;
+    this.docked = !this.docked ? this.docks.name : false;
     return this.setPercentages();
   };
 
@@ -151,26 +170,31 @@ TouchSplitter = (function() {
 
   TouchSplitter.prototype.moveBar = function(newX) {
     var cursorPos, cursorPos2;
-    cursorPos = this.initBarPosition + (newX - this.initMouse) / this.splitDist();
+    cursorPos = .5;
+    if (newX != null) {
+      cursorPos = this.initBarPosition + (newX - this.initMouse) / this.splitDistance;
+    }
     cursorPos2 = 1 - cursorPos;
-    switch (this.docked) {
-      case 'first':
-        if (cursorPos > this.firstMinRatio / 2) {
-          this.docked = null;
-        }
-        break;
-      case 'second':
-        if (cursorPos2 > this.secondMinRatio / 2) {
-          this.docked = null;
-        }
-        break;
-      default:
-        if (cursorPos2 < this.secondMinRatio / 2) {
-          this.docked = 'second';
-        }
-        if (cursorPos < this.firstMinRatio / 2) {
-          this.docked = 'first';
-        }
+    if (this.docks.name) {
+      switch (this.docked) {
+        case 'first':
+          if (cursorPos > this.firstMinRatio / 2) {
+            this.docked = null;
+          }
+          break;
+        case 'second':
+          if (cursorPos2 > this.secondMinRatio / 2) {
+            this.docked = null;
+          }
+          break;
+        default:
+          if (this.docks.first && cursorPos < this.firstMinRatio / 2) {
+            this.docked = 'first';
+          }
+          if (this.docks.second && cursorPos2 < this.secondMinRatio / 2) {
+            this.docked = 'second';
+          }
+      }
     }
     this.barPosition = (function() {
       switch (false) {
@@ -309,7 +333,7 @@ TouchSplitter = (function() {
     this.setRatios();
     attr = this.horizontal ? "width" : "height";
     if (!this.support.calc) {
-      this.barThickness = this.barThicknessPx / this.splitDist();
+      this.barThickness = this.barThicknessPx / this.splitDistance;
       if (this.barThickness > 1) {
         this.barThickness = 1;
       }
