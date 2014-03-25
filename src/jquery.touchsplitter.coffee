@@ -4,9 +4,12 @@
 # Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.
 ###
 $.fn.touchSplit = (options = {}) ->
+  if this[0].touchSplitter?
+    throw "Cannot make a splitter here! '#{ this.selector }' already has a splitter!
+            Use $('#{ this.selector }')[0].touchSplitter.destroy(<optional side to remove>) to remove it!"
   if this.children().length isnt 2 and this.children().length isnt 0
-    throw "Cannot make a splitter here! Incorrect number of div children in "+this
-  new TouchSplitter(this, options)
+    throw "Cannot make a splitter here! Incorrect number of div children in '#{ this.selector }'"
+  this[0].touchSplitter = new TouchSplitter(this, options)
 class TouchSplitter
   constructor: (@element, options) ->
     @element.addClass 'TouchSplitter'
@@ -92,6 +95,30 @@ class TouchSplitter
     @element.on 'touchend', @onTouchEnd
     @element.on 'touchleave', @onTouchEnd
     @element.on 'touchcancel', @onTouchEnd
+
+  destroy: (side) =>
+    @element.off('resize')
+    $(window).off('resize')
+    $(window).off 'mousemove'
+    @element.find('>.splitter-bar').off 'mousedown'
+    @element.find('>.splitter-bar').off 'touchstart'
+    @element.off 'touchmove'
+    @element.off 'touchend'
+    @element.off 'touchleave'
+    @element.off 'touchcancel'
+    @element.find('>.splitter-bar').remove()
+    @element.removeClass('TouchSplitter h-ts v-ts docks-first docks-second docks-both')
+    if side?
+      toRemove = switch side
+        when 'left', 'top'
+          '>div:first'
+        when 'right', 'bottom'
+          '>div:last'
+        when 'both'
+          '>div'
+      @element.find(toRemove).remove()
+    @element.children().css({width: "", height: ""})
+    delete @element[0].touchSplitter
 
   setRatios: =>
     @splitDistance = if @horizontal then @element.width() else @element.height()

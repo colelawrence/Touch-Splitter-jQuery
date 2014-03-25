@@ -40,3 +40,24 @@ It is highly recommended that your splitter container has a relative, absolute, 
 		touchSplitter1.getFirst().touchSplit({orientation:"vertical"})
 	</script>
 ```
+
+## Teardown
+To teardown a touch splitter you can use any of the following methods
+
+```javascript
+var splitted = $('.split-me')
+
+// Destroy splitter without removing either first or second element
+splitted.touchSplitter.destroy();
+
+// Destroy splitter and remove top or left element
+splitted.touchSplitter.destroy('first');
+
+// Destroy splitter and remove bottom or right element
+splitted.touchSplitter.destroy('second');
+
+// Destroy splitter and remove all elements
+splitted.touchSplitter.destroy('both');
+
+(typeof splitted.touchSplitter === 'undefined') // true
+```

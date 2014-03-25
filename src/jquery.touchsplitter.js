@@ -12,10 +12,13 @@ $.fn.touchSplit = function(options) {
   if (options == null) {
     options = {};
   }
-  if (this.children().length !== 2 && this.children().length !== 0) {
-    throw "Cannot make a splitter here! Incorrect number of div children in " + this;
+  if (this[0].touchSplitter != null) {
+    throw "Cannot make a splitter here! '" + this.selector + "' already has a splitter! Use $('" + this.selector + "')[0].touchSplitter.destroy(<optional side to remove>) to remove it!";
   }
-  return new TouchSplitter(this, options);
+  if (this.children().length !== 2 && this.children().length !== 0) {
+    throw "Cannot make a splitter here! Incorrect number of div children in '" + this.selector + "'";
+  }
+  return this[0].touchSplitter = new TouchSplitter(this, options);
 };
 
 TouchSplitter = (function() {
@@ -39,6 +42,7 @@ TouchSplitter = (function() {
     this.on = __bind(this.on, this);
     this.toggleDock = __bind(this.toggleDock, this);
     this.setRatios = __bind(this.setRatios, this);
+    this.destroy = __bind(this.destroy, this);
     this.element.addClass('TouchSplitter');
     this.support = {};
     testEm = $('<div class="test-em"></div>');
@@ -136,6 +140,41 @@ TouchSplitter = (function() {
     this.element.on('touchleave', this.onTouchEnd);
     this.element.on('touchcancel', this.onTouchEnd);
   }
+
+  TouchSplitter.prototype.destroy = function(side) {
+    var toRemove;
+    this.element.off('resize');
+    $(window).off('resize');
+    $(window).off('mousemove');
+    this.element.find('>.splitter-bar').off('mousedown');
+    this.element.find('>.splitter-bar').off('touchstart');
+    this.element.off('touchmove');
+    this.element.off('touchend');
+    this.element.off('touchleave');
+    this.element.off('touchcancel');
+    this.element.find('>.splitter-bar').remove();
+    this.element.removeClass('TouchSplitter h-ts v-ts docks-first docks-second docks-both');
+    if (side != null) {
+      toRemove = (function() {
+        switch (side) {
+          case 'left':
+          case 'top':
+            return '>div:first';
+          case 'right':
+          case 'bottom':
+            return '>div:last';
+          case 'both':
+            return '>div';
+        }
+      })();
+      this.element.find(toRemove).remove();
+    }
+    this.element.children().css({
+      width: "",
+      height: ""
+    });
+    return delete this.element[0].touchSplitter;
+  };
 
   TouchSplitter.prototype.setRatios = function() {
     var conv, val, _ref;

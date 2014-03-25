@@ -1,7 +1,7 @@
 {
   "name": "touch-splitter-jquery",
   "description":"A simple splitter bar system with event triggers, compatible with touch screen devices",
-  "version": "0.3.2",
+  "version": "0.3.4",
   "dependencies": {},
   "author":
     {

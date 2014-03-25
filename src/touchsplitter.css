@@ -1,5 +1,3 @@
-.TouchSplitter.h-ts {overflow-x:hidden;}
-.TouchSplitter.v-ts {overflow-y:hidden;}
 .TouchSplitter.h-ts>div{height: 100%;width: 42%;width: calc(50% - .5em);}
 .TouchSplitter.v-ts>div{width: 100%;height: 42%;height: calc(50% - .5em);}
 .TouchSplitter>div {
