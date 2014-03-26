@@ -5,384 +5,414 @@
  * This work is licensed under the Creative Commons Attribution-ShareAlike 3.0
  * Unported License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.
  */
-var TouchSplitter,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-$.fn.touchSplit = function(options) {
-  if (options == null) {
-    options = {};
-  }
-  if (this[0].touchSplitter != null) {
-    throw "Cannot make a splitter here! '" + this.selector + "' already has a splitter! Use $('" + this.selector + "')[0].touchSplitter.destroy(<optional side to remove>) to remove it!";
-  }
-  if (this.children().length !== 2 && this.children().length !== 0) {
-    throw "Cannot make a splitter here! Incorrect number of div children in '" + this.selector + "'";
-  }
-  return this[0].touchSplitter = new TouchSplitter(this, options);
-};
+(function() {
+  var TouchSplitter,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-TouchSplitter = (function() {
-  function TouchSplitter(element, options) {
-    var emWidth, firstdiv, inners, splitterHTML, testCalc, testEm;
-    this.element = element;
-    this.resize = __bind(this.resize, this);
-    this.onResize = __bind(this.onResize, this);
-    this.onResizeWindow = __bind(this.onResizeWindow, this);
-    this.getSecond = __bind(this.getSecond, this);
-    this.getFirst = __bind(this.getFirst, this);
-    this.stopDragging = __bind(this.stopDragging, this);
-    this.drag = __bind(this.drag, this);
-    this.startDragging = __bind(this.startDragging, this);
-    this.onTouchEnd = __bind(this.onTouchEnd, this);
-    this.onTouchMove = __bind(this.onTouchMove, this);
-    this.onTouchStart = __bind(this.onTouchStart, this);
-    this.onMouseDown = __bind(this.onMouseDown, this);
-    this.setPercentages = __bind(this.setPercentages, this);
-    this.moveBar = __bind(this.moveBar, this);
-    this.on = __bind(this.on, this);
-    this.toggleDock = __bind(this.toggleDock, this);
-    this.setRatios = __bind(this.setRatios, this);
-    this.destroy = __bind(this.destroy, this);
-    this.element.addClass('TouchSplitter');
-    this.support = {};
-    testEm = $('<div class="test-em"></div>');
-    testEm.appendTo(this.element);
-    emWidth = testEm.width();
-    testEm.remove();
-    testCalc = $('<div class="test-calc"></div>');
-    testCalc.appendTo(this.element);
-    this.support.calc = false;
-    testCalc.remove();
-    if (options.orientation != null) {
-      if (options.orientation === "vertical") {
-        this.horizontal = false;
-      } else if (options.orientation === "horizontal") {
+  $.fn.touchSplit = function(options) {
+    if (options == null) {
+      options = {};
+    }
+    if (this[0].touchSplitter != null) {
+      throw "Cannot make a splitter here! '" + this.selector + "' already has a splitter! Use $('" + this.selector + "')[0].touchSplitter.destroy(<optional side to remove>) to remove it!";
+    }
+    if (this.children().length !== 2 && this.children().length !== 0) {
+      throw "Cannot make a splitter here! Incorrect number of div children in '" + this.selector + "'";
+    }
+    return this[0].touchSplitter = new TouchSplitter(this, options);
+  };
 
-      } else {
-        console.log("Touch Splitter ERROR: orientation cannot be:'" + options.orientation + "' defaulted to 'horizontal'");
+  TouchSplitter = (function() {
+    function TouchSplitter(element, options) {
+      var barWidth, firstdiv, inners, match, splitterHTML, testCalc, testEm, units, width;
+      this.element = element;
+      this.resize = __bind(this.resize, this);
+      this.onResize = __bind(this.onResize, this);
+      this.onResizeWindow = __bind(this.onResizeWindow, this);
+      this.getSecond = __bind(this.getSecond, this);
+      this.getFirst = __bind(this.getFirst, this);
+      this.stopDragging = __bind(this.stopDragging, this);
+      this.drag = __bind(this.drag, this);
+      this.startDragging = __bind(this.startDragging, this);
+      this.onTouchEnd = __bind(this.onTouchEnd, this);
+      this.onTouchMove = __bind(this.onTouchMove, this);
+      this.onTouchStart = __bind(this.onTouchStart, this);
+      this.onMouseDown = __bind(this.onMouseDown, this);
+      this.setPercentages = __bind(this.setPercentages, this);
+      this.moveBar = __bind(this.moveBar, this);
+      this.on = __bind(this.on, this);
+      this.toggleDock = __bind(this.toggleDock, this);
+      this.setRatios = __bind(this.setRatios, this);
+      this.destroy = __bind(this.destroy, this);
+      this.element.addClass('TouchSplitter');
+      this.support = {};
+      testEm = $('<div class="test-em"></div>');
+      testEm.appendTo(this.element);
+      barWidth = testEm.width();
+      testEm.remove();
+      testCalc = $('<div class="test-calc"></div>');
+      testCalc.appendTo(this.element);
+      this.support.calc = false;
+      testCalc.remove();
+      if (options.orientation != null) {
+        if (options.orientation === "vertical") {
+          this.horizontal = false;
+        } else if (options.orientation === "horizontal") {
+
+        } else {
+          console.log("Touch Splitter ERROR: orientation cannot be:'" + options.orientation + "' defaulted to 'horizontal'");
+        }
       }
+      if (this.horizontal !== false) {
+        this.horizontal = true;
+      }
+      this.element.addClass(this.horizontal ? "h-ts" : "v-ts");
+      this.firstMin = options.leftMin || options.topMin || options.firstMin || 0;
+      this.firstMax = options.leftMax || options.topMax || options.firstMax || false;
+      this.secondMin = options.rightMin || options.bottomMin || options.secondMin || 0;
+      this.secondMax = options.rightMax || options.bottomMax || options.secondMax || false;
+      this.isFirstBounded = !!this.firstMin || !!this.firstMax;
+      this.isSecondBounded = !!this.secondMin || !!this.secondMax;
+      if (this.firstMax && this.secondMax) {
+        console.log("Touch Splitter ERROR: cannot set max bounds of both first and second sections!");
+      }
+      this.secondMax = 0;
+      if (options.dock != null) {
+        if (/both|left|top|first|right|bottom|second/i.test(options.dock)) {
+          this.docks = (function() {
+            switch (false) {
+              case !/both/i.test(options.dock):
+                return {
+                  first: true,
+                  second: true,
+                  name: "both"
+                };
+              case !/left|top|first/i.test(options.dock):
+                return {
+                  first: true,
+                  second: false,
+                  name: "first"
+                };
+              case !/right|bottom|second/i.test(options.dock):
+                return {
+                  first: false,
+                  second: true,
+                  name: "second"
+                };
+            }
+          })();
+        }
+      }
+      if (this.docks) {
+        this.element.addClass('docks-' + this.docks.name);
+      } else {
+        this.docks = {
+          first: false,
+          second: false,
+          name: false
+        };
+      }
+      if (options.width != null) {
+        width = options.width;
+        units = "px";
+        if (typeof width === 'string') {
+          if (match = width.match(/^([\d\.]+)([a-zA-Z]+)$/)) {
+            console.log(match);
+            width = match[1];
+            units = match[2];
+          }
+          width = parseFloat(width);
+        }
+        if (!width) {
+          throw "Unable to parse given width: " + options.width;
+        } else {
+          width = (function() {
+            switch (units) {
+              case "px":
+                return barWidth = width;
+              case "em":
+                return barWidth *= width;
+              default:
+                throw "Invalid unit used in given width: " + units;
+            }
+          })();
+        }
+      }
+      firstdiv = this.element.find(">div:first");
+      splitterHTML = "<div class=\"splitter-bar\">" + (this.docks.name && this.docks.name.match(/first|second/) ? '<div></div>' : '') + "</div>";
+      if (firstdiv.length === 0) {
+        inners = this.element.html();
+        this.element.html("<div></div> " + splitterHTML + " <div></div>");
+        this.element.find(">div:first").html(inners);
+      } else {
+        firstdiv.after(splitterHTML);
+      }
+      if (this.docks.name && this.docks.name !== 'both') {
+        this.element.find('>.splitter-bar>div').click(this.toggleDock);
+      }
+      this.barThicknessPx = barWidth / 2;
+      this.barThickness = .04;
+      this.barPosition = 0.5;
+      this.dragging = false;
+      this.initMouse = 0;
+      this.initBarPosition = 0;
+      this.resize();
+      this.element.on('resize', this.onResize);
+      $(window).on('resize', this.onResizeWindow);
+      $(window).on('mousemove', this.drag);
+      this.element.find('>.splitter-bar').on('mousedown', this.onMouseDown);
+      this.element.find('>.splitter-bar').bind('touchstart', this.onTouchStart);
+      this.element.on('touchmove', this.onTouchMove);
+      this.element.on('touchend', this.onTouchEnd);
+      this.element.on('touchleave', this.onTouchEnd);
+      this.element.on('touchcancel', this.onTouchEnd);
     }
-    if (this.horizontal !== false) {
-      this.horizontal = true;
-    }
-    this.element.addClass(this.horizontal ? "h-ts" : "v-ts");
-    this.firstMin = options.leftMin || options.topMin || options.firstMin || 0;
-    this.firstMax = options.leftMax || options.topMax || options.firstMax || false;
-    this.secondMin = options.rightMin || options.bottomMin || options.secondMin || 0;
-    this.secondMax = options.rightMax || options.bottomMax || options.secondMax || false;
-    this.isFirstBounded = !!this.firstMin || !!this.firstMax;
-    this.isSecondBounded = !!this.secondMin || !!this.secondMax;
-    if (this.firstMax && this.secondMax) {
-      console.log("Touch Splitter ERROR: cannot set max bounds of both first and second sections!");
-    }
-    this.secondMax = 0;
-    if (options.dock != null) {
-      if (/both|left|top|first|right|bottom|second/i.test(options.dock)) {
-        this.docks = (function() {
-          switch (false) {
-            case !/both/i.test(options.dock):
-              return {
-                first: true,
-                second: true,
-                name: "both"
-              };
-            case !/left|top|first/i.test(options.dock):
-              return {
-                first: true,
-                second: false,
-                name: "first"
-              };
-            case !/right|bottom|second/i.test(options.dock):
-              return {
-                first: false,
-                second: true,
-                name: "second"
-              };
+
+    TouchSplitter.prototype.destroy = function(side) {
+      var toRemove;
+      this.element.off('resize');
+      $(window).off('resize');
+      $(window).off('mousemove');
+      this.element.find('>.splitter-bar').off('mousedown');
+      this.element.find('>.splitter-bar').off('touchstart');
+      this.element.off('touchmove');
+      this.element.off('touchend');
+      this.element.off('touchleave');
+      this.element.off('touchcancel');
+      this.element.find('>.splitter-bar').remove();
+      this.element.removeClass('TouchSplitter h-ts v-ts docks-first docks-second docks-both');
+      if (side != null) {
+        toRemove = (function() {
+          switch (side) {
+            case 'left':
+            case 'top':
+              return '>div:first';
+            case 'right':
+            case 'bottom':
+              return '>div:last';
+            case 'both':
+              return '>div';
           }
         })();
+        this.element.find(toRemove).remove();
       }
-    }
-    if (this.docks) {
-      this.element.addClass('docks-' + this.docks.name);
-    } else {
-      this.docks = {
-        first: false,
-        second: false,
-        name: false
-      };
-    }
-    firstdiv = this.element.find(">div:first");
-    splitterHTML = "<div class=\"splitter-bar\">" + (this.docks.name && this.docks.name.match(/first|second/) ? '<div></div>' : '') + "</div>";
-    if (firstdiv.length === 0) {
-      inners = this.element.html();
-      this.element.html("<div></div> " + splitterHTML + " <div></div>");
-      this.element.find(">div:first").html(inners);
-    } else {
-      firstdiv.after(splitterHTML);
-    }
-    if (this.docks.name && this.docks.name !== 'both') {
-      this.element.find('>.splitter-bar>div').click(this.toggleDock);
-    }
-    this.barThicknessPx = emWidth / 2;
-    this.barThickness = .04;
-    this.barPosition = 0.5;
-    this.dragging = false;
-    this.initMouse = 0;
-    this.initBarPosition = 0;
-    this.resize();
-    this.element.on('resize', this.onResize);
-    $(window).on('resize', this.onResizeWindow);
-    $(window).on('mousemove', this.drag);
-    this.element.find('>.splitter-bar').on('mousedown', this.onMouseDown);
-    this.element.find('>.splitter-bar').bind('touchstart', this.onTouchStart);
-    this.element.on('touchmove', this.onTouchMove);
-    this.element.on('touchend', this.onTouchEnd);
-    this.element.on('touchleave', this.onTouchEnd);
-    this.element.on('touchcancel', this.onTouchEnd);
-  }
-
-  TouchSplitter.prototype.destroy = function(side) {
-    var toRemove;
-    this.element.off('resize');
-    $(window).off('resize');
-    $(window).off('mousemove');
-    this.element.find('>.splitter-bar').off('mousedown');
-    this.element.find('>.splitter-bar').off('touchstart');
-    this.element.off('touchmove');
-    this.element.off('touchend');
-    this.element.off('touchleave');
-    this.element.off('touchcancel');
-    this.element.find('>.splitter-bar').remove();
-    this.element.removeClass('TouchSplitter h-ts v-ts docks-first docks-second docks-both');
-    if (side != null) {
-      toRemove = (function() {
-        switch (side) {
-          case 'left':
-          case 'top':
-            return '>div:first';
-          case 'right':
-          case 'bottom':
-            return '>div:last';
-          case 'both':
-            return '>div';
-        }
-      })();
-      this.element.find(toRemove).remove();
-    }
-    this.element.children().css({
-      width: "",
-      height: ""
-    });
-    return delete this.element[0].touchSplitter;
-  };
-
-  TouchSplitter.prototype.setRatios = function() {
-    var conv, val, _ref;
-    this.splitDistance = this.horizontal ? this.element.width() : this.element.height();
-    _ref = {
-      firstMin: this.firstMin,
-      firstMax: this.firstMax,
-      secondMin: this.secondMin,
-      secondMax: this.secondMax
+      this.element.children().css({
+        width: "",
+        height: ""
+      });
+      return delete this.element[0].touchSplitter;
     };
-    for (conv in _ref) {
-      val = _ref[conv];
-      if (val) {
-        this[conv + 'Ratio'] = val / this.splitDistance;
+
+    TouchSplitter.prototype.setRatios = function() {
+      var conv, val, _ref;
+      this.splitDistance = this.horizontal ? this.element.width() : this.element.height();
+      _ref = {
+        firstMin: this.firstMin,
+        firstMax: this.firstMax,
+        secondMin: this.secondMin,
+        secondMax: this.secondMax
+      };
+      for (conv in _ref) {
+        val = _ref[conv];
+        if (val) {
+          this[conv + 'Ratio'] = val / this.splitDistance;
+        }
       }
-    }
-    return this.moveBar();
-  };
+      return this.moveBar();
+    };
 
-  TouchSplitter.prototype.toggleDock = function(event) {
-    if (event == null) {
-      event = null;
-    }
-    this.element.toggleClass('docked');
-    this.docked = !this.docked ? this.docks.name : false;
-    return this.setPercentages();
-  };
+    TouchSplitter.prototype.toggleDock = function(event) {
+      if (event == null) {
+        event = null;
+      }
+      this.element.toggleClass('docked');
+      this.docked = !this.docked ? this.docks.name : false;
+      return this.setPercentages();
+    };
 
-  TouchSplitter.prototype.on = function(eventName, fn) {
-    return this.element.on(eventName, fn);
-  };
+    TouchSplitter.prototype.on = function(eventName, fn) {
+      return this.element.on(eventName, fn);
+    };
 
-  TouchSplitter.prototype.moveBar = function(newX) {
-    var cursorPos, cursorPos2;
-    cursorPos = .5;
-    if (newX != null) {
-      cursorPos = this.initBarPosition + (newX - this.initMouse) / this.splitDistance;
-    }
-    cursorPos2 = 1 - cursorPos;
-    if (this.docks.name) {
+    TouchSplitter.prototype.moveBar = function(newX) {
+      var cursorPos, cursorPos2;
+      cursorPos = .5;
+      if (newX != null) {
+        cursorPos = this.initBarPosition + (newX - this.initMouse) / this.splitDistance;
+      }
+      cursorPos2 = 1 - cursorPos;
+      if (this.docks.name) {
+        switch (this.docked) {
+          case 'first':
+            if (cursorPos > this.firstMinRatio / 2) {
+              this.docked = null;
+            }
+            break;
+          case 'second':
+            if (cursorPos2 > this.secondMinRatio / 2) {
+              this.docked = null;
+            }
+            break;
+          default:
+            if (this.docks.first && cursorPos < this.firstMinRatio / 2) {
+              this.docked = 'first';
+            }
+            if (this.docks.second && cursorPos2 < this.secondMinRatio / 2) {
+              this.docked = 'second';
+            }
+        }
+      }
+      this.barPosition = (function() {
+        switch (false) {
+          case !(this.firstMaxRatio && cursorPos > this.firstMaxRatio):
+            return this.firstMaxRatio;
+          case !(cursorPos < this.firstMinRatio):
+            return this.firstMinRatio;
+          case !(this.secondMaxRatio && cursorPos2 > this.secondMaxRatio):
+            return 1 - this.secondMaxRatio;
+          case !(cursorPos2 < this.secondMinRatio):
+            return 1 - this.secondMinRatio;
+          default:
+            return cursorPos;
+        }
+      }).call(this);
+      return this.setPercentages();
+    };
+
+    TouchSplitter.prototype.setPercentages = function() {
+      var attr, first, firstCss, pos, second, secondCss, shave;
+      pos = this.barPosition;
       switch (this.docked) {
         case 'first':
-          if (cursorPos > this.firstMinRatio / 2) {
-            this.docked = null;
-          }
+          pos = 0;
           break;
         case 'second':
-          if (cursorPos2 > this.secondMinRatio / 2) {
-            this.docked = null;
-          }
-          break;
-        default:
-          if (this.docks.first && cursorPos < this.firstMinRatio / 2) {
-            this.docked = 'first';
-          }
-          if (this.docks.second && cursorPos2 < this.secondMinRatio / 2) {
-            this.docked = 'second';
-          }
+          pos = 1;
       }
-    }
-    this.barPosition = (function() {
-      switch (false) {
-        case !(this.firstMaxRatio && cursorPos > this.firstMaxRatio):
-          return this.firstMaxRatio;
-        case !(cursorPos < this.firstMinRatio):
-          return this.firstMinRatio;
-        case !(this.secondMaxRatio && cursorPos2 > this.secondMaxRatio):
-          return 1 - this.secondMaxRatio;
-        case !(cursorPos2 < this.secondMinRatio):
-          return 1 - this.secondMinRatio;
-        default:
-          return cursorPos;
+      firstCss = secondCss = "";
+      if (!this.support.calc) {
+        if (pos < this.barThickness) {
+          pos = this.barThickness;
+        }
+        if (pos > 1 - this.barThickness) {
+          pos = 1 - this.barThickness;
+        }
+        if (!this.docked) {
+          this.barPosition = pos;
+        }
+        first = pos - this.barThickness;
+        second = 1 - pos - this.barThickness;
+        firstCss = "" + (100 * first - this.barThickness) + "%";
+        secondCss = "" + (100 * second - this.barThickness) + "%";
+      } else {
+        shave = this.barThicknessPx;
+        if (this.docked) {
+          shave *= 2;
+        }
+        pos *= 100;
+        firstCss = "calc(" + pos + "% - " + shave + "px)";
+        secondCss = "calc(" + (100 - pos) + "% - " + shave + "px)";
       }
-    }).call(this);
-    return this.setPercentages();
-  };
+      attr = this.horizontal ? "width" : "height";
+      this.getFirst().css(attr, firstCss);
+      return this.getSecond().css(attr, secondCss);
+    };
 
-  TouchSplitter.prototype.setPercentages = function() {
-    var attr, first, firstCss, pos, second, secondCss, shave;
-    pos = this.barPosition;
-    switch (this.docked) {
-      case 'first':
-        pos = 0;
-        break;
-      case 'second':
-        pos = 1;
-    }
-    firstCss = secondCss = "";
-    if (!this.support.calc) {
-      if (pos < this.barThickness) {
-        pos = this.barThickness;
-      }
-      if (pos > 1 - this.barThickness) {
-        pos = 1 - this.barThickness;
-      }
-      if (!this.docked) {
-        this.barPosition = pos;
-      }
-      first = pos - this.barThickness;
-      second = 1 - pos - this.barThickness;
-      firstCss = "" + (100 * first - this.barThickness) + "%";
-      secondCss = "" + (100 * second - this.barThickness) + "%";
-    } else {
-      shave = this.barThicknessPx;
-      if (this.docked) {
-        shave *= 2;
-      }
-      pos *= 100;
-      firstCss = "calc(" + pos + "% - " + shave + "px)";
-      secondCss = "calc(" + (100 - pos) + "% - " + shave + "px)";
-    }
-    attr = this.horizontal ? "width" : "height";
-    this.getFirst().css(attr, firstCss);
-    return this.getSecond().css(attr, secondCss);
-  };
+    TouchSplitter.prototype.onMouseDown = function(event) {
+      event.preventDefault();
+      this.initMouse = this.horizontal ? event.clientX : event.clientY;
+      return this.startDragging(event);
+    };
 
-  TouchSplitter.prototype.onMouseDown = function(event) {
-    event.preventDefault();
-    this.initMouse = this.horizontal ? event.clientX : event.clientY;
-    return this.startDragging(event);
-  };
+    TouchSplitter.prototype.onTouchStart = function(event) {
+      var orig;
+      orig = event.originalEvent;
+      this.initMouse = this.horizontal ? orig.changedTouches[0].pageX : orig.changedTouches[0].pageY;
+      return this.startDragging(event);
+    };
 
-  TouchSplitter.prototype.onTouchStart = function(event) {
-    var orig;
-    orig = event.originalEvent;
-    this.initMouse = this.horizontal ? orig.changedTouches[0].pageX : orig.changedTouches[0].pageY;
-    return this.startDragging(event);
-  };
-
-  TouchSplitter.prototype.onTouchMove = function(event) {
-    var orig, page;
-    if (!this.dragging) {
-      return;
-    }
-    event.preventDefault();
-    orig = event.originalEvent;
-    page = this.horizontal ? orig.changedTouches[0].pageX : orig.changedTouches[0].pageY;
-    return this.moveBar(page);
-  };
-
-  TouchSplitter.prototype.onTouchEnd = function(event) {
-    return this.stopDragging(event);
-  };
-
-  TouchSplitter.prototype.startDragging = function(event) {
-    this.initBarPosition = this.barPosition;
-    this.dragging = true;
-    return this.element.trigger("dragstart");
-  };
-
-  TouchSplitter.prototype.drag = function(event) {
-    var client, whichM;
-    if (!this.dragging) {
-      return;
-    }
-    whichM = typeof event.buttons !== 'undefined' ? event.buttons : event.which;
-    if (whichM === 0) {
-      this.stopDragging();
-    }
-    client = this.horizontal ? event.clientX : event.clientY;
-    return this.moveBar(client);
-  };
-
-  TouchSplitter.prototype.stopDragging = function(event) {
-    if (this.dragging) {
-      this.dragging = false;
-      return this.element.trigger("dragstop");
-    }
-  };
-
-  TouchSplitter.prototype.getFirst = function() {
-    return this.element.find('>div:first');
-  };
-
-  TouchSplitter.prototype.getSecond = function() {
-    return this.element.find('>div:last');
-  };
-
-  TouchSplitter.prototype.onResizeWindow = function(event) {
-    return this.resize();
-  };
-
-  TouchSplitter.prototype.onResize = function(event) {
-    if (event != null) {
-      event.stopPropagation();
-      if (!$(event.target).is(this.element)) {
+    TouchSplitter.prototype.onTouchMove = function(event) {
+      var orig, page;
+      if (!this.dragging) {
         return;
       }
-    }
-    return this.resize();
-  };
+      event.preventDefault();
+      orig = event.originalEvent;
+      page = this.horizontal ? orig.changedTouches[0].pageX : orig.changedTouches[0].pageY;
+      return this.moveBar(page);
+    };
 
-  TouchSplitter.prototype.resize = function() {
-    var attr;
-    this.setRatios();
-    attr = this.horizontal ? "width" : "height";
-    if (!this.support.calc) {
-      this.barThickness = this.barThicknessPx / this.splitDistance;
-      if (this.barThickness > 1) {
-        this.barThickness = 1;
+    TouchSplitter.prototype.onTouchEnd = function(event) {
+      return this.stopDragging(event);
+    };
+
+    TouchSplitter.prototype.startDragging = function(event) {
+      this.initBarPosition = this.barPosition;
+      this.dragging = true;
+      return this.element.trigger("dragstart");
+    };
+
+    TouchSplitter.prototype.drag = function(event) {
+      var client, whichM;
+      if (!this.dragging) {
+        return;
       }
-      this.element.find('>.splitter-bar').css(attr, this.barThickness * 200 + '%');
-    } else {
-      this.barThickness = 0;
-    }
-    return this.setPercentages();
-  };
+      whichM = typeof event.buttons !== 'undefined' ? event.buttons : event.which;
+      if (whichM === 0) {
+        this.stopDragging();
+      }
+      client = this.horizontal ? event.clientX : event.clientY;
+      return this.moveBar(client);
+    };
 
-  return TouchSplitter;
+    TouchSplitter.prototype.stopDragging = function(event) {
+      if (this.dragging) {
+        this.dragging = false;
+        return this.element.trigger("dragstop");
+      }
+    };
 
-})();
+    TouchSplitter.prototype.getFirst = function() {
+      return this.element.find('>div:first');
+    };
+
+    TouchSplitter.prototype.getSecond = function() {
+      return this.element.find('>div:last');
+    };
+
+    TouchSplitter.prototype.onResizeWindow = function(event) {
+      return this.resize();
+    };
+
+    TouchSplitter.prototype.onResize = function(event) {
+      if (event != null) {
+        event.stopPropagation();
+        if (!$(event.target).is(this.element)) {
+          return;
+        }
+      }
+      return this.resize();
+    };
+
+    TouchSplitter.prototype.resize = function() {
+      var attr;
+      this.setRatios();
+      attr = this.horizontal ? "width" : "height";
+      if (!this.support.calc) {
+        this.barThickness = this.barThicknessPx / this.splitDistance;
+        if (this.barThickness > 1) {
+          this.barThickness = 1;
+        }
+        this.element.find('>.splitter-bar').css(attr, this.barThickness * 200 + '%');
+      } else {
+        this.barThickness = 0;
+      }
+      return this.setPercentages();
+    };
+
+    return TouchSplitter;
+
+  })();
+
+}).call(this);

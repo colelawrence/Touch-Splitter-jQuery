@@ -19,7 +19,7 @@ class TouchSplitter
     # em size
     testEm = $ '<div class="test-em"></div>'
     testEm.appendTo @element
-    emWidth = testEm.width()
+    barWidth = testEm.width()
     testEm.remove()
 
     # calc
@@ -61,6 +61,27 @@ class TouchSplitter
     if @docks then @element.addClass 'docks-' + @docks.name
     else @docks = { first: false, second: false, name: false }
 
+    # Bar width
+    if options.width?
+      width = options.width
+      units = "px"
+      if typeof width is 'string'
+        if match = width.match /^([\d\.]+)([a-zA-Z]+)$/
+          console.log(match)
+          width = match[1]
+          units = match[2]
+        width = parseFloat(width)
+      if not width
+        throw "Unable to parse given width: " + options.width
+      else
+        width = switch units
+          when "px"
+            barWidth = width
+          when "em"
+            barWidth *= width
+          else
+            throw "Invalid unit used in given width: " + units
+
     # Create Splitter bar div
     firstdiv = @element.find ">div:first"
     splitterHTML = "<div class=\"splitter-bar\">#{if (@docks.name and @docks.name.match(/first|second/)) then '<div></div>' else ''}</div>"
@@ -78,7 +99,7 @@ class TouchSplitter
     if @docks.name and @docks.name isnt 'both'
       @element.find('>.splitter-bar>div').click @toggleDock
 
-    @barThicknessPx = emWidth / 2
+    @barThicknessPx = barWidth / 2
     @barThickness = .04  # half of the percent width
     @barPosition = 0.5
     @dragging = false
