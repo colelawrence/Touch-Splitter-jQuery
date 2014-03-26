@@ -8,9 +8,9 @@ build = (watch=false) ->
   coffee.stderr.on 'data', (data) -> console.log data.toString().trim()
 
 task 'build', 'Build coffee',(options)->
-  console.log "Building coffee-script from src/ to static/js/script.js"
+  console.log "Building coffee-script from src/ to src/"
   build()
 
 task 'watch', 'Watch coffee', ->
-  console.log "Watching coffee-script from src/ to static/js/script.js"
+  console.log "Watching coffee-script from src/ to src/"
   build(true)
