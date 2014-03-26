@@ -44,12 +44,10 @@ class TouchSplitter
     @firstMax = options.leftMax || options.topMax || options.firstMax || false
     @secondMin = options.rightMin || options.bottomMin || options.secondMin || 0
     @secondMax = options.rightMax || options.bottomMax || options.secondMax || false
-    @isFirstBounded = !!@firstMin or !!@firstMax
-    @isSecondBounded = !!@secondMin or !!@secondMax
 
     if @firstMax and @secondMax
       console.log "Touch Splitter ERROR: cannot set max bounds of both first and second sections!"
-    @secondMax = 0
+      @secondMax = false
 
     # Docking
     if options.dock?
@@ -67,7 +65,6 @@ class TouchSplitter
       units = "px"
       if typeof thickness is 'string'
         if match = thickness.match /^([\d\.]+)([a-zA-Z]+)$/
-          console.log(match)
           thickness = match[1]
           units = match[2]
         thickness = parseFloat(thickness)
@@ -95,9 +92,6 @@ class TouchSplitter
       @element.find(">div:first").html(inners)
     else
       firstdiv.after splitterHTML
-
-    if @docks.name and @docks.name isnt 'both'
-      @element.find('>.splitter-bar>div').click @toggleDock
 
     @barThicknessPx = barThick / 2
     @barThickness = .04  # half of the percent width
@@ -148,15 +142,15 @@ class TouchSplitter
         @[conv+'Ratio'] = val / @splitDistance
     @moveBar() # Conform to bounds
 
-  toggleDock:(event = null) =>
+  toggleDock: =>
     @element.toggleClass 'docked'
-    @docked = if not @docked then @docks.name else false
-    @setPercentages()
+    if @docked then @setDock false
+    else @setDock @docks.name
   on: (eventName, fn) =>
     @element.on(eventName,fn)
 
   moveBar: (newX) =>
-    cursorPos = .5
+    cursorPos = @barPosition
     if newX?
       cursorPos = @initBarPosition + (newX - @initMouse) / @splitDistance # = range [0,1]
     cursorPos2 = 1 - cursorPos
@@ -164,41 +158,46 @@ class TouchSplitter
       switch @docked
         when 'first'
           if cursorPos > @firstMinRatio / 2
-            @docked = null
+            @setDock false
         when 'second'
           if cursorPos2 > @secondMinRatio / 2
-            @docked = null
+            @setDock false
         else
           if @docks.first and cursorPos < @firstMinRatio / 2
-            @docked = 'first'
+            @setDock 'first'
           if @docks.second and cursorPos2 < @secondMinRatio / 2
-            @docked = 'second'
-    @barPosition = switch
-      when @firstMaxRatio and cursorPos > @firstMaxRatio
-        @firstMaxRatio
-      when cursorPos < @firstMinRatio
-        @firstMinRatio
-      when @secondMaxRatio and cursorPos2 > @secondMaxRatio
-        1 - @secondMaxRatio
-      when cursorPos2 < @secondMinRatio
-        1 - @secondMinRatio
-      else
-        cursorPos
+            @setDock 'second'
+    if not @docked
+      @barPosition = switch
+        when @firstMaxRatio and cursorPos > @firstMaxRatio
+          @firstMaxRatio
+        when cursorPos < @firstMinRatio
+          @firstMinRatio
+        when @secondMaxRatio and cursorPos2 > @secondMaxRatio
+          1 - @secondMaxRatio
+        when cursorPos2 < @secondMinRatio
+          1 - @secondMinRatio
+        else
+          cursorPos
+      @setPercentages()
+
+  setDock: (val, lastpos = @barPosition) =>
+    @docked = val
+    @barPosition = @lastPosition
+    @lastPosition = lastpos
     @setPercentages()
 
   setPercentages: =>
-    pos = @barPosition
     switch @docked
       when 'first'
-        pos = 0
+        @barPosition = 0
       when 'second'
-        pos = 1
+        @barPosition = 1
+    pos = @barPosition
     firstCss = secondCss = ""
     if not @support.calc
       pos = @barThickness if pos < @barThickness
       pos = 1 - @barThickness if pos > 1 - @barThickness
-      if not @docked
-        @barPosition = pos
       first = pos - @barThickness
       second = 1 - pos - @barThickness
       firstCss = "#{ 100*first - @barThickness}%"
@@ -240,6 +239,7 @@ class TouchSplitter
 
   startDragging: (event) =>
     @initBarPosition = @barPosition
+    @isToggler = !! event.target.parentNode.className.match /\bsplitter-bar\b/
     @dragging = true
     @element.trigger "dragstart"
 
@@ -255,6 +255,12 @@ class TouchSplitter
     if @dragging
       @dragging = false
       @element.trigger "dragstop"
+      if @isToggler
+        setTimeout =>
+          if (@barPosition - @initBarPosition) is 0
+            @toggleDock()
+        , 0
+
 
   getFirst: =>
     @element.find('>div:first')
