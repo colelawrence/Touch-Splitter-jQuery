@@ -25,7 +25,7 @@
 
   TouchSplitter = (function() {
     function TouchSplitter(element, options) {
-      var barWidth, firstdiv, inners, match, splitterHTML, testCalc, testEm, units, width;
+      var barThick, firstdiv, inners, match, splitterHTML, testCalc, testEm, thickness, units;
       this.element = element;
       this.resize = __bind(this.resize, this);
       this.onResize = __bind(this.onResize, this);
@@ -49,7 +49,7 @@
       this.support = {};
       testEm = $('<div class="test-em"></div>');
       testEm.appendTo(this.element);
-      barWidth = testEm.width();
+      barThick = testEm.width();
       testEm.remove();
       testCalc = $('<div class="test-calc"></div>');
       testCalc.appendTo(this.element);
@@ -113,28 +113,28 @@
           name: false
         };
       }
-      if (options.width != null) {
-        width = options.width;
+      if (options.thickness != null) {
+        thickness = options.thickness;
         units = "px";
-        if (typeof width === 'string') {
-          if (match = width.match(/^([\d\.]+)([a-zA-Z]+)$/)) {
+        if (typeof thickness === 'string') {
+          if (match = thickness.match(/^([\d\.]+)([a-zA-Z]+)$/)) {
             console.log(match);
-            width = match[1];
+            thickness = match[1];
             units = match[2];
           }
-          width = parseFloat(width);
+          thickness = parseFloat(thickness);
         }
-        if (!width) {
-          throw "Unable to parse given width: " + options.width;
+        if (!thickness) {
+          throw "Unable to parse given thickness: " + options.thickness;
         } else {
-          width = (function() {
+          thickness = (function() {
             switch (units) {
               case "px":
-                return barWidth = width;
+                return barThick = thickness;
               case "em":
-                return barWidth *= width;
+                return barThick *= thickness;
               default:
-                throw "Invalid unit used in given width: " + units;
+                throw "Invalid unit used in given thickness: " + units;
             }
           })();
         }
@@ -151,7 +151,7 @@
       if (this.docks.name && this.docks.name !== 'both') {
         this.element.find('>.splitter-bar>div').click(this.toggleDock);
       }
-      this.barThicknessPx = barWidth / 2;
+      this.barThicknessPx = barThick / 2;
       this.barThickness = .04;
       this.barPosition = 0.5;
       this.dragging = false;

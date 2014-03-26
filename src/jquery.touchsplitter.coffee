@@ -19,7 +19,7 @@ class TouchSplitter
     # em size
     testEm = $ '<div class="test-em"></div>'
     testEm.appendTo @element
-    barWidth = testEm.width()
+    barThick = testEm.width()
     testEm.remove()
 
     # calc
@@ -62,25 +62,25 @@ class TouchSplitter
     else @docks = { first: false, second: false, name: false }
 
     # Bar width
-    if options.width?
-      width = options.width
+    if options.thickness?
+      thickness = options.thickness
       units = "px"
-      if typeof width is 'string'
-        if match = width.match /^([\d\.]+)([a-zA-Z]+)$/
+      if typeof thickness is 'string'
+        if match = thickness.match /^([\d\.]+)([a-zA-Z]+)$/
           console.log(match)
-          width = match[1]
+          thickness = match[1]
           units = match[2]
-        width = parseFloat(width)
-      if not width
-        throw "Unable to parse given width: " + options.width
+        thickness = parseFloat(thickness)
+      if not thickness
+        throw "Unable to parse given thickness: " + options.thickness
       else
-        width = switch units
+        thickness = switch units
           when "px"
-            barWidth = width
+            barThick = thickness
           when "em"
-            barWidth *= width
+            barThick *= thickness
           else
-            throw "Invalid unit used in given width: " + units
+            throw "Invalid unit used in given thickness: " + units
 
     # Create Splitter bar div
     firstdiv = @element.find ">div:first"
@@ -99,7 +99,7 @@ class TouchSplitter
     if @docks.name and @docks.name isnt 'both'
       @element.find('>.splitter-bar>div').click @toggleDock
 
-    @barThicknessPx = barWidth / 2
+    @barThicknessPx = barThick / 2
     @barThickness = .04  # half of the percent width
     @barPosition = 0.5
     @dragging = false
