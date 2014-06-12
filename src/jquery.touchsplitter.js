@@ -155,6 +155,7 @@
       this.resize();
       this.element.on('resize', this.onResize);
       $(window).on('resize', this.onResizeWindow);
+      $(window).on('mouseup', this.stopDragging);
       $(window).on('mousemove', this.drag);
       this.element.find('>.splitter-bar').on('mousedown', this.onMouseDown);
       this.element.find('>.splitter-bar').bind('touchstart', this.onTouchStart);
@@ -168,6 +169,7 @@
       var toRemove;
       this.element.off('resize');
       $(window).off('resize');
+      $(window).off('mouseup');
       $(window).off('mousemove');
       this.element.find('>.splitter-bar').off('mousedown');
       this.element.find('>.splitter-bar').off('touchstart');

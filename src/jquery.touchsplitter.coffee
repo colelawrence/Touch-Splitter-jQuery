@@ -103,6 +103,7 @@ class TouchSplitter
     @resize()
     @element.on('resize', @onResize)
     $(window).on('resize', @onResizeWindow)
+    $(window).on('mouseup', @stopDragging)
     $(window).on 'mousemove', @drag
     @element.find('>.splitter-bar').on 'mousedown', @onMouseDown
     @element.find('>.splitter-bar').bind 'touchstart', @onTouchStart
@@ -114,6 +115,7 @@ class TouchSplitter
   destroy: (side) =>
     @element.off('resize')
     $(window).off('resize')
+    $(window).off('mouseup')
     $(window).off 'mousemove'
     @element.find('>.splitter-bar').off 'mousedown'
     @element.find('>.splitter-bar').off 'touchstart'
@@ -247,7 +249,7 @@ class TouchSplitter
     return if not @dragging
     # Mozilla and Webkit handle the mousemove event differently 
     whichM = if typeof event.buttons isnt 'undefined' then event.buttons else event.which
-    @stopDragging() if whichM is 0
+    @stopDragging() if whichM is 0 # And safari doesn't report buttons on mousemove at all so we have on mouseup
     client = if @horizontal then event.clientX else event.clientY
     @moveBar client
 
