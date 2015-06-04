@@ -1,7 +1,7 @@
 {spawn, exec} = require 'child_process'
 build = (watch=false) ->
   filepath = './src/jquery.touchsplitter.coffee'
-  coffee = spawn 'cmd', ["/c", "coffee", "-j", filepath.replace(/.coffee$/, ".js"), "-c"+(if watch then "w" else "")].concat [filepath]
+  coffee = spawn 'cmd', ["/c", "coffee", "-c"+(if watch then "w" else "")].concat [filepath]
   coffee.on 'error', (err) ->
     console.log 'coffee error', err
   coffee.stdout.on 'data', (data) -> console.log data.toString().trim()
