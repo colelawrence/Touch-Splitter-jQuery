@@ -88,7 +88,12 @@
               barThick *= thickness
             else
               throw "Invalid unit used in given thickness: " + units
-
+              
+      # Bar starting position
+      @startPosition = if options.startPosition is 0 then 0 else if options.startPosition then options.startPosition else 0.5;
+      if @startPosition < 0 || @startPosition > 1
+        throw "Bar starting position out of bounds. Please enter a value larger between 0 and 1"
+      
       # Create Splitter bar div
       firstdiv = @element.find ">div:first"
       splitterHTML = "<div class=\"splitter-bar\">#{if (@docks.name and @docks.name.match(/first|second/)) then '<div></div>' else ''}</div>"
@@ -105,7 +110,7 @@
 
       @barThicknessPx = barThick / 2
       @barThickness = .04  # half of the percent width
-      @barPosition = 0.5
+      @barPosition = @startPosition
       @dragging = false
       @initMouse = 0
       @initBarPosition = 0
