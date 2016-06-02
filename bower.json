@@ -1,0 +1,19 @@
+{
+  "name": "touch-splitter-jquery",
+  "description": "A simple splitter bar system with event triggers, compatible with touch screen devices",
+  "main": "src/jquery.touchsplitter.js",
+  "authors": [
+    "@ZombieHippie", "@rayzru"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "splitter",
+    "touch",
+    "resizer",
+    "js"
+  ],
+  "homepage": "https://github.com/rayzru/Touch-Splitter-jQuery",
+  "ignore": [
+    "**/.*"
+  ]
+}
