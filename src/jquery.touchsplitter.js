@@ -146,6 +146,10 @@
             })();
           }
         }
+        this.startPosition = options.startPosition === 0 ? 0 : options.startPosition ? options.startPosition : 0.5;
+        if (this.startPosition < 0 || this.startPosition > 1) {
+          throw "Bar starting position out of bounds. Please enter a value larger between 0 and 1";
+        }
         firstdiv = this.element.find(">div:first");
         splitterHTML = "<div class=\"splitter-bar\">" + (this.docks.name && this.docks.name.match(/first|second/) ? '<div></div>' : '') + "</div>";
         if (firstdiv.length === 0) {
