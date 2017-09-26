@@ -180,16 +180,16 @@
 
       TouchSplitter.prototype.destroy = function(side) {
         var toRemove;
-        this.element.off('resize', this.onResize);
-        $(window).off('resize', this.onResizeWindow);
-        $(window).off('mouseup', this.stopDragging);
-        $(window).off('mousemove', this.drag);
-        this.element.find('>.splitter-bar').off('mousedown', this.onMouseDown);
-        this.element.find('>.splitter-bar').off('touchstart', this.onTouchStart);
-        this.element.off('touchmove', this.onTouchMove);
-        this.element.off('touchend', this.onTouchEnd);
-        this.element.off('touchleave', this.onTouchEnd);
-        this.element.off('touchcancel', this.onTouchEnd);
+        this.element.off('resize');
+        $(window).off('resize');
+        $(window).off('mouseup');
+        $(window).off('mousemove');
+        this.element.find('>.splitter-bar').off('mousedown');
+        this.element.find('>.splitter-bar').off('touchstart');
+        this.element.off('touchmove');
+        this.element.off('touchend');
+        this.element.off('touchleave');
+        this.element.off('touchcancel');
         this.element.find('>.splitter-bar').remove();
         this.element.removeClass('TouchSplitter h-ts v-ts docks-first docks-second docks-both');
         if (side != null) {
