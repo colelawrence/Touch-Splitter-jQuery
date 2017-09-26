@@ -128,16 +128,16 @@
       @element.on 'touchcancel', @onTouchEnd
 
     destroy: (side) =>
-      @element.off('resize')
-      $(window).off('resize')
-      $(window).off('mouseup')
-      $(window).off 'mousemove'
-      @element.find('>.splitter-bar').off 'mousedown'
-      @element.find('>.splitter-bar').off 'touchstart'
-      @element.off 'touchmove'
-      @element.off 'touchend'
-      @element.off 'touchleave'
-      @element.off 'touchcancel'
+      @element.off('resize', @onResize)
+      $(window).off('resize', @onResizeWindow)
+      $(window).off('mouseup', @stopDragging)
+      $(window).off 'mousemove', @drag
+      @element.find('>.splitter-bar').off 'mousedown', @onMouseDown
+      @element.find('>.splitter-bar').off 'touchstart', @onTouchStart
+      @element.off 'touchmove', @onTouchMove
+      @element.off 'touchend', @onTouchEnd
+      @element.off 'touchleave', @onTouchEnd
+      @element.off 'touchcancel', @onTouchEnd
       @element.find('>.splitter-bar').remove()
       @element.removeClass('TouchSplitter h-ts v-ts docks-first docks-second docks-both')
       if side?
