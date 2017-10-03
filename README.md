@@ -5,7 +5,7 @@ A high performance html splitter compatible with touch events
 
 ![Touch Splitter](http://i.imgur.com/QkMajJa.png)
 
-##Install via npm
+## Install via npm
 
 ```npm install touch-splitter-jquery```
 
