@@ -15,12 +15,12 @@ You can then use the compiled javascript and css in your client resources.
  * `./node_modules/touch-splitter-jquery/src/touchsplitter.css`
 
 
-##**Demos**
+## **Demos**
 
-####[Basic Demo Page](http://zombiehippie.github.io/Touch-Splitter-jQuery/)
+#### [Basic Demo Page](http://colelawrence.github.io/Touch-Splitter-jQuery/)
 This is our basic page that is pictured above. You can see the source in the [index.html](/index.html) file.
 
-####[Quick Test CoffeeScript](http://zombiehippie.github.io/Quick-Test-CoffeeScript/)
+#### [Quick Test CoffeeScript](http://colelawrence.github.io/Quick-Test-CoffeeScript/)
 Basic ide that uses two different splitters, one vertical splitter, then a horizontal splitter that divides the source from the compiled javascript.
 
 ## Example Setup
