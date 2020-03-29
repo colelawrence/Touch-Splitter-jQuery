@@ -12,8 +12,10 @@
 		height:1em;
 		background-repeat: no-repeat;
 		background-position: center;}
+/*
 .TouchSplitter,
-.TouchSplitter>div,
+.TouchSplitter>div, 
+*/
 .TouchSplitter>div.splitter-bar>div{
 	position:relative;
 	margin:0;
